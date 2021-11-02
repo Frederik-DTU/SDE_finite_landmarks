@@ -356,7 +356,7 @@ class landmark_models(object):
         
 #%% Testing
 
-sde = sde_finite_landmarks()
+sde = sde_finite_landmarks(seed=900)
 
 def k(x, theta):
     return jnp.exp(-jnp.dot(x,x)/2)

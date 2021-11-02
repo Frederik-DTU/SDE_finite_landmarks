@@ -286,10 +286,12 @@ class sde_finite_landmarks(object):
         else:
             dWt = jnp.diff(Wt, axis=0).reshape([n_sim, n_steps-1, dim_brown])
 
+        print(dt)
         for i in range(n_sim):
             sim = sim.at[i,0].set(x0)
             for j in range(1,n_steps):
                 t_up = t0+dt*j
+                #print(sim[i,j-1])
                 sim = sim.at[i,j].set(sim[i,j-1]+
                                         f(t_up, sim[i,j-1], theta)*dt+
                                            jnp.dot(g(t_up, sim[i,j-1], theta),dWt[i,j-1]))
@@ -336,20 +338,12 @@ class sde_finite_landmarks(object):
             dim=shape[2]
         
         Xt = Xt.reshape(n_sim, n_steps, dim)
-        
-        ito_int = jnp.zeros((n_sim, dim))
         dt = (T-t0)/n_steps  
         dWt = jnp.sqrt(dt)*random.normal(self.key, [n_sim_int, n_steps-1, dim])
-        
-        for n in range(n_sim_int):
-            for i in range(1,n_steps):
-                ito_int += Xt[:,i-1,:]*dWt[n,i,:]
-                
-        ito_int /= n_sim_int
 
         self.key += 1
 
-        return ito_int.sum(axis=0)/n_sim
+        return (Xt[:,:-1,:]*dWt).sum(axis=1).sum(axis=0)/n_sim_int
     
     def stratonovich_integral(self, Xt:jnp.ndarray,
                               n_sim_int:int = 10,
@@ -389,19 +383,12 @@ class sde_finite_landmarks(object):
             dim=shape[2]
         
         Xt = Xt.reshape(n_sim, n_steps, dim)
-        strat_int = jnp.zeros((n_sim, dim))
         dt = (T-t0)/n_steps 
         dWt = jnp.sqrt(dt)*random.normal(self.key, [n_sim_int, n_steps-1, dim])
         
-        for n in range(n_sim_int):
-            for i in range(1,n_steps):
-                strat_int += (Xt[:,i-1,:]+Xt[:,i,:])*dWt[n,i,:]
-    
-        strat_int /= (2*n_sim_int)
-        
         self.key += 1
                                 
-        return strat_int.sum(axis=0)/n_sim
+        return ((Xt[:,:-1,:]+Xt[:,1:,:])*dWt).sum(axis=1).sum(axis=0)/(2*n_sim_int)
     
     def ri_trapez(self, ft:jnp.ndarray,
                       h:float)->jnp.ndarray:
@@ -420,15 +407,7 @@ class sde_finite_landmarks(object):
         Estimation of the Riemannian integral
         """
         
-        n = len(ft)        
-        integration = ft[0]+ft[-1]
-        
-        for i in range(1,n):
-            integration = integration + 2 * ft[i]
-        
-        integration = integration * h/2
-        
-        return integration
+        return (h/2)*jnp.sum(ft[1:]+ft[:-1])
     
     def hessian(self, fun:Callable[[jnp.ndarray], jnp.ndarray]
                 )->Callable[[jnp.ndarray], jnp.ndarray]:
@@ -492,7 +471,7 @@ class sde_finite_landmarks(object):
         if len(p0.shape)==1:
             p0 = p0.reshape(-1,1)
         
-        x0 = jnp.hstack((q0, p0)).reshape(-1)   
+        x0 = jnp.hstack((q0.reshape(-1), p0.reshape(-1)))
         a_fun = lambda t,x,par: self.sigma_fun(t, x, par).dot(\
                                 self.sigma_fun(t, x, par).transpose())
         g_fun = lambda t,x,par: self.sigma_fun(t,x,par)
@@ -518,7 +497,7 @@ class sde_finite_landmarks(object):
         self.t0 = t0
         self.T = T
         self.dim = len(x0)
-        self.dim_brown = sigma_fun(0,x0).shape[-1]
+        self.dim_brown = sigma_fun(0,x0, theta).shape[-1]
         self.a_fun = a_fun
         self.g_fun = g_fun
         self.dn = len(q0.reshape(-1))
@@ -529,37 +508,45 @@ class sde_finite_landmarks(object):
         t_vec, Xt = self.sim_sde(x0, b_fun, sigma_fun, Wt = Wt, 
                              theta=theta, n_sim=1, n_steps=n_steps, t0=t0, T=T)
         
+        self.sigmatilde = jnp.apply_along_axis(self.sigmatilde_fun, 1, 
+                                         t_vec.reshape(-1,1), theta)
+        self.atilde = jnp.matmul(self.sigmatilde, self.sigmatilde.transpose(0,2,1))
+        self.betatilde = jnp.apply_along_axis(self.betatilde_fun, 1, 
+                                         t_vec.reshape(-1,1), theta)
+        self.Btilde = jnp.apply_along_axis(self.Btilde_fun, 1, 
+                                         t_vec.reshape(-1,1), theta)
+        
         if theta is None:
-            Wt, Xt = self.__approx_p0(t_vec, Xt, Wt, x0, q0, p0)
+            Wt, Xt = self.__approx_p0(t_vec, Xt, Wt, x0, p0)
         else:
-            Wt, Xt, theta = self.__approx_p0_theta(t_vec, Xt, Wt, x0, q0, p0, 
+            Wt, Xt, theta = self.__approx_p0_theta(t_vec, Xt, Wt, x0, p0, 
                                                    theta)
             
         return Wt, Xt, theta
     
     def __approx_p0(self, t_vec:jnp.ndarray, Xt:jnp.ndarray, Wt:jnp.ndarray,
-                    x0:jnp.ndarray, q0:jnp.ndarray, p0:jnp.ndarray
+                    x0:jnp.ndarray, p0:jnp.ndarray
                     )->Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray]:
         
         self.__update_matrices(Xt, t_vec, None)
         for i in range(self.max_iter):
             print("Computing iteration: ", i+1)
             Wt, Xt = self.__al_51(x0, None, self.vT, Xt, Wt, t_vec)
-            p0, Xt = self.__al_52(p0, q0, None, self.vT, Xt, Wt)
-            x0 = jnp.hstack((q0.reshape(-1), p0.reshape(-1)))
+            p0, Xt = self.__al_52(p0, None, self.vT, Xt, Wt)
+            x0 = jnp.hstack((self.q0.reshape(-1), p0.reshape(-1)))
             
         return Wt, Xt
     
     def __approx_p0_theta(self, t_vec:jnp.ndarray, Xt:jnp.ndarray, Wt:jnp.ndarray,
-                    x0:jnp.ndarray, q0:jnp.ndarray, p0:jnp.ndarray, theta:jnp.ndarray,
+                    x0:jnp.ndarray, p0:jnp.ndarray, theta:jnp.ndarray,
                     )->Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray]:
         
         self.__update_matrices(Xt, t_vec, theta)
         for i in range(self.max_iter):
             print("Computing iteration: ", i+1)
             Wt, Xt = self.__al_51(x0, theta, self.vT, Xt, Wt, t_vec)
-            p0, Xt = self.__al_52(p0, q0, theta, self.vT, Xt, Wt)
-            x0 = jnp.hstack((q0, p0)).reshape(-1)
+            p0, Xt = self.__al_52(p0, theta, self.vT, Xt, Wt)
+            x0 = jnp.hstack((self.q0.reshape(-1), p0.reshape(-1)))
             theta, Xt = self.__al_53(x0, theta, Xt, Wt, self.vT)
             
         return Wt, Xt, theta
@@ -620,7 +607,6 @@ class sde_finite_landmarks(object):
         return Wt, Xt
     
     def __al_52(self, p0:jnp.ndarray,
-                q0:jnp.ndarray,
                 theta:jnp.ndarray,
                 vT:jnp.ndarray,
                 Xt:jnp.ndarray,
@@ -629,13 +615,13 @@ class sde_finite_landmarks(object):
         U = self.sim_uniform()
         Z = self.sim_multi_normal(mu=jnp.zeros(self.dn), sigma=jnp.eye(self.dn)).reshape(p0.shape)
                 
-        L_theta = lambda p0, q0=q0, theta=theta, Wt=Wt, \
-            Xt=Xt: self.__compute_Ltheta(jnp.hstack((q0,p0)).reshape(-1), theta, Wt, Xt)
+        L_theta = lambda p0, q0=self.q0, theta=theta, Wt=Wt, \
+            Xt=Xt: self.__compute_Ltheta(jnp.hstack((self.q0,p0)).reshape(-1), theta, Wt, Xt)
         grad_L = grad(L_theta)
         L_p0 = grad_L(p0)
         
         p0_circ = p0+self.delta/2*grad_L(p0)+self.sqrt_delta*Z
-        x0_circ = jnp.hstack((q0.reshape(-1), p0_circ.reshape(-1)))
+        x0_circ = jnp.hstack((self.q0.reshape(-1), p0_circ.reshape(-1)))
 
         t, Xt_circ = self.sim_sde(x0_circ, self.f_fun, self.g_fun, Wt=Wt,
                                   theta=theta, n_sim=1, 
@@ -666,8 +652,7 @@ class sde_finite_landmarks(object):
         ############## A IS NAN!!!!###########################
         #FROM PSI_XT
         
-        print(self.psi_Xt)
-        print(A)
+        #print(A)
 
         if U<A:
             Xt = Xt_circ
@@ -738,52 +723,27 @@ class sde_finite_landmarks(object):
         for i in range(len(t)):
             sigma = sigma.at[i].set(self.sigma_fun(t[i], Xt[i], theta))
             
-        sigmatilde = jnp.zeros((len(t), sigma.shape[1], sigma.shape[2]))
-        for i in range(len(t)):
-            sigmatilde = sigmatilde.at[i].set(self.sigmatilde_fun(t[i], theta))
-        
-        #sigma = jnp.apply_along_axis(self.sigma_fun, 0, t, Xt,theta)
-        #sigmatilde = jnp.apply_along_axis(self.sigmatilde_fun, 0, t, theta)
-        
-        #sigma = self.sigma_fun(t,Xt, theta)
-        #sigmatilde = self.sigmatilde_fun(t, theta)
-        
-        sigma_trans = jnp.einsum('ijn->inj', sigma)
-        sigmatilde_trans = jnp.einsum('ijn->inj', sigmatilde)
-        
-        a = jnp.matmul(sigma, sigma_trans)
-        atilde = jnp.matmul(sigmatilde, sigmatilde_trans)
-        
-        betatilde = jnp.zeros((len(t), Xt.shape[-1]))
-        Btilde = jnp.zeros((len(t), Xt.shape[-1], Xt.shape[-1]))
-        
-        for i in range(len(t)):
-            betatilde = betatilde.at[i].set(self.betatilde_fun(t[i], theta))
-            
-        for i in range(len(t)):
-            Btilde = Btilde.at[i].set(self.Btilde_fun(t, theta))
-        
-        btilde = betatilde+jnp.einsum('ijn,in->ij', Btilde, Xt)
-        
         b = jnp.zeros((len(t), Xt.shape[-1]))
         for i in range(len(t)):
             b = b.at[i].set(self.b_fun(t[i], Xt[i], theta))
         
-        #b = self.b_fun(t,Xt, theta)
-        rtilde = self.__compute_rtildemat(Xt, Ht, Ft)
+        a = jnp.matmul(sigma, sigma.transpose(0,2,1))
         
-        rtilde_trans = jnp.einsum('ijn->inj', rtilde[...,jnp.newaxis])
+        btilde = self.betatilde+jnp.einsum('ijn,in->ij', self.Btilde, Xt)
+        rtilde = self.__compute_rtildemat(Xt, Ht, Ft)[...,jnp.newaxis]
         
-        val = Ht-jnp.matmul(rtilde[...,jnp.newaxis], rtilde_trans)
-        num = jnp.einsum('ij,ij->i', b-btilde, rtilde)
-        den = jnp.matmul(a-atilde, Ht-val)
+        print(btilde.sum())
+        
+        val = Ht-jnp.matmul(rtilde, rtilde.transpose(0,2,1))
+        
+        num = jnp.einsum('ij,ij->i', b-btilde, rtilde.squeeze())
+        den = jnp.matmul(a-self.atilde, Ht-val)
         
         Gx = num-1/2*jnp.trace(den,axis1=1, axis2=2)
                         
         dt = t[1]-t[0]
         
         return jnp.exp(self.ri_trapez(Gx,dt))
-        
     
     def __solve_backward(self, theta:jnp.ndarray
                          )->Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray]:
@@ -868,7 +828,7 @@ class sde_finite_landmarks(object):
     def __compute_rtildemat(self, Xt:jnp.ndarray,
                          Ht:jnp.ndarray, 
                          Ft:jnp.ndarray)->jnp.ndarray:
-        
+                        
         return Ft-jnp.einsum('ijk,ik->j', Ht, Xt)
     
     def __compute_rhotilde(self, Vt:jnp.ndarray,
@@ -892,6 +852,62 @@ class sde_finite_landmarks(object):
         
         #return self.multi_normal_pdf(v0, mean=mean, cov=M0)
         return self.multi_normal_pdf(v, mean=mean, cov=M0)
+    
+#%% Testing
+
+sde = sde_finite_landmarks(seed=900)
+
+def b_fun(t, x, theta):
+    
+    return jnp.ones(4)
+
+def sigma_fun(t, x, theta):
+    
+    return jnp.eye(4)
+
+def sigmatilde_fun(t, theta):
+    
+    return jnp.eye(4)
+
+def betatilde_fun(t, theta):
+    
+    return jnp.zeros(4)
+
+def Btilde_fun(t, theta):
+    
+    return 1.8*jnp.eye(4)
+
+def pi_prob(p0):
+    return multivariate_normal.pdf(p0, mean=jnp.zeros_like(p0),
+                                   cov=100*jnp.eye(len(p0)))
+
+def q_theta(theta_circ, theta):
+    
+    return multivariate_normal.pdf(jnp.log(theta_circ), mean=jnp.log(theta),
+                                   cov=jnp.eye(len(theta)))
+
+def q_sample_theta(theta_circ, theta):
+    
+    theta_circ = sde.sim_multi_normal(mean=jnp.log(theta),cov=jnp.eye(len(theta)))
+    
+    return theta_circ
+    
+p0 = jnp.array([0.0, 0.0]).reshape(-1,1)
+q0 = jnp.array([1.0, 1.0]).reshape(-1,1)
+qT = jnp.array([1.5, 1.5])
+epsilon=1
+SigmaT = epsilon**2*jnp.eye(2)
+LT = jnp.hstack((jnp.eye(2), jnp.zeros((2,2))))
+x0 = jnp.vstack((q0, p0))
+
+vT = qT
+
+val = sde.approx_landmark_sde(q0, p0, vT, SigmaT, LT, b_fun, sigma_fun, 
+                              betatilde_fun, Btilde_fun, sigmatilde_fun, 
+                              pi_prob, q_theta, q_sample_theta,
+                              max_iter=10,
+                              n_steps=100)
+
 
 
 
