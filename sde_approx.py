@@ -286,12 +286,11 @@ class sde_finite_landmarks(object):
         else:
             dWt = jnp.diff(Wt, axis=0).reshape([n_sim, n_steps-1, dim_brown])
 
-        print(dt)
         for i in range(n_sim):
             sim = sim.at[i,0].set(x0)
             for j in range(1,n_steps):
                 t_up = t0+dt*j
-                #print(sim[i,j-1])
+                #print(f(t_up, sim[i,j-1], theta))
                 sim = sim.at[i,j].set(sim[i,j-1]+
                                         f(t_up, sim[i,j-1], theta)*dt+
                                            jnp.dot(g(t_up, sim[i,j-1], theta),dWt[i,j-1]))
@@ -557,7 +556,7 @@ class sde_finite_landmarks(object):
         Lt, Mt, mut = self.__solve_backward(theta)
         Mt_inv = jnp.linalg.inv(Mt)
         Ft = self.__compute_Ft(Lt, Mt_inv, self.vT, mut)
-        Ht = self.__compute_Ht(Lt, Mt)
+        Ht = self.__compute_Ht(Lt, Mt_inv)
         rtilde = lambda t,x, t_vec=t_vec: self.__compute_rtilde(x, Ht[jnp.argmin(t_vec-t)], 
                                              Ft[jnp.argmin(t_vec-t)])
         f_fun = lambda t,x,par: self.b_fun(t,x,par)+\
@@ -652,8 +651,8 @@ class sde_finite_landmarks(object):
         ############## A IS NAN!!!!###########################
         #FROM PSI_XT
         
-        #print(A)
-
+        print(psi_Xtcirc)
+        
         if U<A:
             Xt = Xt_circ
             p0 = p0_circ
@@ -680,7 +679,7 @@ class sde_finite_landmarks(object):
         Lt_circ, Mt_circ, mut_circ = self.solve_backward(theta_circ)
         Mt_inv_circ = jnp.linalg.inv(Mt_circ)
         Ft_circ = self.__compute_Ft(Lt_circ, Mt_inv_circ, vT, mut_circ)
-        Ht_circ = self.__compute_Ht(Lt_circ, Mt_circ)
+        Ht_circ = self.__compute_Ht(Lt_circ, Mt_inv_circ)
         psi_Xtcirc = self.__compute_psi(Xt_circ, t_vec, Ht_circ, Ft_circ)
         rho_x0circ = self.__compute_rhox0(x0, mut_circ[0], Mt_circ[0], Lt_circ[0])
         
@@ -731,9 +730,7 @@ class sde_finite_landmarks(object):
         
         btilde = self.betatilde+jnp.einsum('ijn,in->ij', self.Btilde, Xt)
         rtilde = self.__compute_rtildemat(Xt, Ht, Ft)[...,jnp.newaxis]
-        
-        print(btilde.sum())
-        
+                
         val = Ht-jnp.matmul(rtilde, rtilde.transpose(0,2,1))
         
         num = jnp.einsum('ij,ij->i', b-btilde, rtilde.squeeze())
@@ -805,20 +802,17 @@ class sde_finite_landmarks(object):
                    vT:jnp.ndarray, #Final observation (qT in landmarks)
                    mut:jnp.ndarray)->jnp.ndarray:
         
-        Lt_trans = jnp.einsum('ijn->inj', Lt)
-        val = jnp.einsum('ijn,ink->ijk', Lt_trans, Mt_inv)
+        val = jnp.einsum('ijn,ink->ijk', Lt.transpose(0,2,1), Mt_inv)
         
         return jnp.einsum('inj,ij->in', val, vT.reshape(-1)-mut)
     
     def __compute_Ht(self, Lt:jnp.ndarray, 
-                   Mt:jnp.ndarray)->jnp.ndarray:
+                   Mt_inv:jnp.ndarray)->jnp.ndarray:
         
-        Lt_trans = jnp.einsum('ijn->inj', Lt)
-        val = jnp.einsum('ijn,ink->ijk', Lt_trans, Mt)
+        val = jnp.einsum('ijn,ink->ijk', Lt.transpose(0,2,1), Mt_inv)
         
         return jnp.einsum('ijn,ink->ijk', val, Lt)
     
-        
     def __compute_rtilde(self, xt:jnp.ndarray,
                          Ht:jnp.ndarray, 
                          Ft:jnp.ndarray)->jnp.ndarray:
