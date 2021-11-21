@@ -18,6 +18,9 @@ from jax import random, jacfwd, jacrev, grad
 from scipy.integrate import odeint
 from scipy.stats import multivariate_normal
 
+#Time modules
+import datetime
+
 #From math
 import math
 
@@ -115,9 +118,8 @@ class sde_finite_landmarks(object):
         
         return
         
-    def sim_Wt(self, n_sim:int=10, n_steps:int=100, dim:int=1, 
-               t0:float = 0.0, 
-               T:float = 1.0)->Tuple[jnp.ndarray, jnp.ndarray]:
+    def sim_Wt(self, n_sim:int=1, grid:jnp.ndarray=jnp.linspace(0, 1, 100), 
+               dim:int=1)->Tuple[jnp.ndarray, jnp.ndarray]:
         
         """Simulates n_sim for dim dimensional Wiener processes with n_steps
         on the time interval t0 to T on a uniform grid
@@ -142,16 +144,47 @@ class sde_finite_landmarks(object):
         -The squeezed wiener process, Wt
         """
         
-        t = jnp.linspace(t0, T, n_steps)
-        dt = (T-t0)/n_steps
-        dWt = jnp.zeros([n_sim, n_steps, dim])
-        
+        n_steps = len(grid)
         N = random.normal(self.key,[n_sim, n_steps-1, dim])
-        dWt = dWt.at[:,1:,:].set(jnp.sqrt(dt)*N)
+        Wt = jnp.zeros([n_sim, n_steps, dim])
+        for i in range(1,n_steps):
+            Wt = Wt.at[:,i,:].set(Wt[:,i-1,:]+jnp.sqrt(grid[i]-grid[i-1])*N[:,i-1,:])
+            
+        return grid, Wt.squeeze()
+    
+    def sim_dWt(self, n_sim:int=1, grid:jnp.ndarray=jnp.linspace(0, 1, 100), 
+               dim:int=1)->Tuple[jnp.ndarray, jnp.ndarray]:
         
-        self.key += 1
+        """Simulates n_sim for dim dimensional Wiener processes with n_steps
+        on the time interval t0 to T on a uniform grid
+
+        Parameters
+        ----------
+        n_sim : int, optional
+            number of realisations
+        n_steps : int, optional
+            number of steps
+        dim : int, optinal
+            dimension of the Wiener process
+        t0 : float, optional
+            start time
+        T : float, optional
+            End time
+            
+        Returns
+        -------
+        tuple of
+        -the time grid, t
+        -The squeezed wiener process, Wt
+        """
         
-        return t, jnp.cumsum(dWt, axis=1).squeeze()
+        n_steps = len(grid)
+        N = random.normal(self.key,[n_sim, n_steps-1, dim])
+        dWt = jnp.zeros([n_sim, n_steps, dim])
+        for i in range(1,n_steps):
+            dWt = dWt.at[:,i,:].set(jnp.sqrt(grid[i]-grid[i-1])*N[:,i-1,:])
+            
+        return grid, dWt.squeeze()
     
     def sim_multi_normal(self, mu:jnp.ndarray = jnp.zeros(2),
                sigma:jnp.ndarray=jnp.eye(2),
@@ -242,10 +275,9 @@ class sde_finite_landmarks(object):
                 g:Callable[[jnp.ndarray, jnp.ndarray], jnp.ndarray],
                 Wt:jnp.ndarray = None,
                 theta:jnp.ndarray = None, #Parameters of the model
-                n_sim:int = 10, 
-                n_steps:int=100, 
-                t0:float = 0.0,
-                T:float = 1.0)->Tuple[jnp.ndarray, jnp.ndarray]:
+                n_sim:int = 1, 
+                grid:jnp.ndarray=jnp.linspace(0, 1, 100)
+                )->Tuple[jnp.ndarray, jnp.ndarray]:
         
         """Simulates n_sim realisations of an SDE on an uniform grid using
         the Euler-Marayama method
@@ -277,27 +309,26 @@ class sde_finite_landmarks(object):
         """
         
         dim_brown = g(0,x0, theta).shape[-1]
-        t = jnp.linspace(t0,T,n_steps)
-        dt = (T-t0)/n_steps
+        n_steps = len(grid)
         sim = jnp.zeros([n_sim, n_steps]+list(x0.shape))
         
         if Wt is None:
-            dWt = jnp.sqrt(dt)*random.normal(self.key, [n_sim, n_steps-1, dim_brown])
+            dWt = self.sim_dWt(n_sim=n_sim, grid=grid, dim=dim_brown)
         else:
             dWt = jnp.diff(Wt, axis=0).reshape([n_sim, n_steps-1, dim_brown])
 
         for i in range(n_sim):
             sim = sim.at[i,0].set(x0)
             for j in range(1,n_steps):
-                t_up = t0+dt*j
-                #print(f(t_up, sim[i,j-1], theta))
+                t_up = grid[j]
+                dt = grid[j]-grid[j-1]
                 sim = sim.at[i,j].set(sim[i,j-1]+
                                         f(t_up, sim[i,j-1], theta)*dt+
                                            jnp.dot(g(t_up, sim[i,j-1], theta),dWt[i,j-1]))
                 
         self.key += 1
         
-        return t, sim.squeeze()
+        return grid, sim.squeeze()
     
     def ito_integral(self, Xt:jnp.ndarray,
                      n_sim_int:int = 10,
@@ -390,7 +421,7 @@ class sde_finite_landmarks(object):
         return ((Xt[:,:-1,:]+Xt[:,1:,:])*dWt).sum(axis=1).sum(axis=0)/(2*n_sim_int)
     
     def ri_trapez(self, ft:jnp.ndarray,
-                      h:float)->jnp.ndarray:
+                      grid:jnp.ndarray)->jnp.ndarray:
         
         """Estimates the Riemannian Integral using trapez method
 
@@ -406,7 +437,12 @@ class sde_finite_landmarks(object):
         Estimation of the Riemannian integral
         """
         
-        return (h/2)*jnp.sum(ft[1:]+ft[:-1])
+        n = len(grid)
+        ri = 0.0
+        for i in range(n):
+            ri += (ft[i]+ft[i+1])*(grid[i+1]-grid[i])/2
+            
+        return ri
     
     def hessian(self, fun:Callable[[jnp.ndarray], jnp.ndarray]
                 )->Callable[[jnp.ndarray], jnp.ndarray]:
@@ -442,6 +478,100 @@ class sde_finite_landmarks(object):
         
         return jacfwd(fun)
     
+    def approx_p0(self, q0:jnp.ndarray,
+                  p0:jnp.ndarray,
+                  vT:jnp.ndarray,
+                  SigmaT:jnp.ndarray,
+                  LT:jnp.ndarray,
+                  time_grid:jnp.ndarray,
+                  b_fun:Callable[[jnp.ndarray, jnp.ndarray, jnp.ndarray], jnp.ndarray],
+                  sigma_fun:Callable[[jnp.ndarray, jnp.ndarray, jnp.ndarray], jnp.ndarray],
+                  betatilde_fun:Callable[[jnp.ndarray, jnp.ndarray], jnp.ndarray],
+                  Btilde_fun:Callable[[jnp.ndarray, jnp.ndarray], jnp.ndarray],
+                  sigmatilde_fun:Callable[[jnp.ndarray, jnp.ndarray], jnp.ndarray],
+                  pi_prob:Callable[[jnp.ndarray, jnp.ndarray], jnp.ndarray],
+                  theta:jnp.ndarray = None,
+                  max_iter:int = 100,
+                  eta:float=0.5,
+                  delta:float=0.1,
+                  save_path:str='',
+                  save_hours:float=1.0,
+                  )->jnp.ndarray:
+        
+        if len(q0.shape)==1:
+            q0 = q0.reshape(-1,1)
+            
+        if len(p0.shape)==1:
+            p0 = p0.reshape(-1,1)
+        
+        x0 = jnp.hstack((q0.reshape(-1), p0.reshape(-1)))
+        
+        a_fun = lambda t,x,par: self.sigma_fun(t, x, par).dot(\
+                                self.sigma_fun(t, x, par).transpose())
+        g_fun = lambda t,x,par: self.sigma_fun(t,x,par)
+        
+        self.q0 = q0
+        self.vT = vT
+        self.SigmaT = SigmaT
+        self.LT = LT
+        self.time_grid = time_grid
+        self.reverse_time_grid = time_grid[::-1] #Reverse order
+        self.b_fun = b_fun
+        self.sigma_fun = sigma_fun
+        self.betatilde_fun = betatilde_fun
+        self.Btilde_fun = Btilde_fun
+        self.sigmatilde_fun = sigmatilde_fun
+        self.pi_prob = pi_prob
+        self.max_iter = max_iter 
+        self.eta = eta
+        self.sqrt_eta = jnp.sqrt(1-eta**2)
+        self.delta = delta
+        self.sqrt_delta = jnp.sqrt(delta)
+        self.dim = len(x0)
+        self.dim_brown = sigma_fun(0,x0, theta).shape[-1]
+        self.a_fun = a_fun
+        self.g_fun = g_fun
+        self.dn = len(q0.reshape(-1))
+        self.sigmatilde = jnp.apply_along_axis(self.sigmatilde_fun, 1, 
+                                         time_grid.reshape(-1,1), theta)
+        self.atilde = jnp.matmul(self.sigmatilde, self.sigmatilde.transpose(0,2,1))
+        self.betatilde = jnp.apply_along_axis(self.betatilde_fun, 1, 
+                                         time_grid.reshape(-1,1), theta)
+        self.Btilde = jnp.apply_along_axis(self.Btilde_fun, 1, 
+                                         time_grid.reshape(-1,1), theta)
+        self.save_path = save_path
+        self.save_hours = save_hours
+        
+        Lt, Mt, mut = self.__solve_backward(theta)
+        Mt_inv = jnp.linalg.inv(Mt)
+        Ft = self.__compute_Ft(Lt, Mt_inv, self.vT, mut)
+        Ht = self.__compute_Ht(Lt, Mt_inv)
+        rtilde = lambda t,x, t_vec=time_grid: self.__compute_rtilde(x, Ht[jnp.argmin(t_vec-t)], 
+                                             Ft[jnp.argmin(t_vec-t)])
+        f_fun = lambda t,x,par: self.b_fun(t,x,par)+\
+                                    self.a_fun(t,x,par).dot(rtilde(t,x))
+        self.f_fun = f_fun
+        self.Ht = Ht
+        self.Ft = Ft
+        self.mut = mut
+        self.Lt = Lt
+        self.Mt = Mt
+        self.Mt_inv = Mt_inv
+        
+        _, Wt = self.sim_Wt(n_sim=1, grid=time_grid, dim=self.dim_brown)
+        
+        _, Xt = self.sim_sde(x0, self.f_fun, self.g_fun, Wt = Wt, 
+                                  theta=theta, 
+                                  grid=self.time_grid)
+        
+        self.psi_Xt = self.__compute_psi(Xt, self.Ht, self.Ft, theta)
+        self.rho_x0 = self.__compute_rhox0(x0, x0, self.mut[0], self.Mt[0], self.Lt[0])
+        self.pi_x0 = pi_prob(q0, p0)
+        
+        Wt, Xt = self.__approx_p0(Xt, Wt, x0, p0)
+            
+        return Wt, Xt
+    
     def approx_landmark_sde(self, q0:jnp.ndarray,
                             p0:jnp.ndarray,
                             vT:jnp.ndarray,
@@ -461,7 +591,9 @@ class sde_finite_landmarks(object):
                             delta:float=0.01,
                             n_steps:int = 100,
                             t0:float=0.0,
-                            T:float=1.0
+                            T:float=1.0,
+                            save_path:str='',
+                            save_hours:float=1.0,
                             )->Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray]:
         
         if len(q0.shape)==1:
@@ -500,12 +632,11 @@ class sde_finite_landmarks(object):
         self.a_fun = a_fun
         self.g_fun = g_fun
         self.dn = len(q0.reshape(-1))
+        self.save_path = save_path
+        self.save_hours = save_hours
         
-        _, Wt = self.sim_Wt(n_sim=1, n_steps=n_steps, dim=self.dim_brown, 
+        t_vec, Wt = self.sim_Wt(n_sim=1, n_steps=n_steps, dim=self.dim_brown, 
                             t0=t0, T=T)
-        
-        t_vec, Xt = self.sim_sde(x0, b_fun, sigma_fun, Wt = Wt, 
-                             theta=theta, n_sim=1, n_steps=n_steps, t0=t0, T=T)
         
         self.sigmatilde = jnp.apply_along_axis(self.sigmatilde_fun, 1, 
                                          t_vec.reshape(-1,1), theta)
@@ -514,44 +645,6 @@ class sde_finite_landmarks(object):
                                          t_vec.reshape(-1,1), theta)
         self.Btilde = jnp.apply_along_axis(self.Btilde_fun, 1, 
                                          t_vec.reshape(-1,1), theta)
-        
-        if theta is None:
-            Wt, Xt = self.__approx_p0(t_vec, Xt, Wt, x0, p0)
-        else:
-            Wt, Xt, theta = self.__approx_p0_theta(t_vec, Xt, Wt, x0, p0, 
-                                                   theta)
-            
-        return Wt, Xt, theta
-    
-    def __approx_p0(self, t_vec:jnp.ndarray, Xt:jnp.ndarray, Wt:jnp.ndarray,
-                    x0:jnp.ndarray, p0:jnp.ndarray
-                    )->Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray]:
-        
-        self.__update_matrices(Xt, t_vec, None)
-        for i in range(self.max_iter):
-            print("Computing iteration: ", i+1)
-            Wt, Xt = self.__al_51(x0, None, self.vT, Xt, Wt, t_vec)
-            p0, Xt = self.__al_52(p0, None, self.vT, Xt, Wt)
-            x0 = jnp.hstack((self.q0.reshape(-1), p0.reshape(-1)))
-            
-        return Wt, Xt
-    
-    def __approx_p0_theta(self, t_vec:jnp.ndarray, Xt:jnp.ndarray, Wt:jnp.ndarray,
-                    x0:jnp.ndarray, p0:jnp.ndarray, theta:jnp.ndarray,
-                    )->Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray]:
-        
-        self.__update_matrices(Xt, t_vec, theta)
-        for i in range(self.max_iter):
-            print("Computing iteration: ", i+1)
-            Wt, Xt = self.__al_51(x0, theta, self.vT, Xt, Wt, t_vec)
-            p0, Xt = self.__al_52(p0, theta, self.vT, Xt, Wt)
-            x0 = jnp.hstack((self.q0.reshape(-1), p0.reshape(-1)))
-            theta, Xt = self.__al_53(x0, theta, Xt, Wt, self.vT)
-            
-        return Wt, Xt, theta
-    
-    def __update_matrices(self, Xt:jnp.ndarray, t_vec:jnp.ndarray, 
-                          theta:jnp.ndarray)->type(None):
         
         Lt, Mt, mut = self.__solve_backward(theta)
         Mt_inv = jnp.linalg.inv(Mt)
@@ -568,9 +661,75 @@ class sde_finite_landmarks(object):
         self.Lt = Lt
         self.Mt = Mt
         self.Mt_inv = Mt_inv
+        
+        t_vec, Xt = self.sim_sde(x0, self.f_fun, self.g_fun, Wt = Wt, 
+                                  theta=theta, 
+                                  n_sim=1, n_steps=self.n_steps,
+                                  t0=self.t0, T=self.T)
+        
         self.psi_Xt = self.__compute_psi(Xt, t_vec, self.Ht, self.Ft, theta)
-        self.rho_x0 = self.__compute_rhox0(Xt[0], Xt[0], self.mut[0], self.Mt[0], self.Lt[0])
+        self.rho_x0 = self.__compute_rhox0(x0, x0, self.mut[0], self.Mt[0], self.Lt[0])
         self.pi_x0 = self.pi_prob(Xt[0])
+        
+        if theta is None:
+            Wt, Xt = self.__approx_p0(t_vec, Xt, Wt, x0, p0)
+        else:
+            Wt, Xt, theta = self.__approx_p0_theta(t_vec, Xt, Wt, x0, p0, 
+                                                   theta)
+            
+        return Wt, Xt, theta
+    
+    def __approx_p0(self, Xt:jnp.ndarray, Wt:jnp.ndarray,
+                    x0:jnp.ndarray, p0:jnp.ndarray
+                    )->Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray]:
+        
+        time_diff = datetime.timedelta(hours=self.save_hours)
+        start_time = datetime.datetime.now()
+        for i in range(self.max_iter):
+            #print("Computing iteration: ", i+1)
+            Wt, Xt = self.__al_51(x0, None, self.vT, Xt, Wt)
+            p0, Xt = self.__al_52(p0, None, self.vT, Xt, Wt)
+            x0 = jnp.hstack((self.q0.reshape(-1), p0.reshape(-1)))
+            current_time = datetime.datetime.now()
+            if current_time - start_time >= time_diff:
+                print("Saving iteration: ", i+1)
+                save_file = self.save_path+'_'+str(i+1)
+                jnp.save(save_file, Xt)
+                start_time = current_time
+            
+        return Wt, Xt
+    
+    def __approx_p0_theta(self, t_vec:jnp.ndarray, Xt:jnp.ndarray, Wt:jnp.ndarray,
+                    x0:jnp.ndarray, p0:jnp.ndarray, theta:jnp.ndarray,
+                    )->Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray]:
+        
+        for i in range(self.max_iter):
+            self.__update_matrices(Xt, t_vec, theta)
+            print("Computing iteration: ", i+1)
+            Wt, Xt = self.__al_51(x0, theta, self.vT, Xt, Wt, t_vec)
+            p0, Xt = self.__al_52(p0, theta, self.vT, Xt, Wt)
+            x0 = jnp.hstack((self.q0.reshape(-1), p0.reshape(-1)))
+            theta, Xt = self.__al_53(x0, theta, Xt, Wt, self.vT)
+            
+        return Wt, Xt, theta
+    
+    def __update_matrices(self, Xt:jnp.ndarray, theta:jnp.ndarray)->type(None):
+        
+        Lt, Mt, mut = self.__solve_backward(theta)
+        Mt_inv = jnp.linalg.inv(Mt)
+        Ft = self.__compute_Ft(Lt, Mt_inv, self.vT, mut)
+        Ht = self.__compute_Ht(Lt, Mt_inv)
+        rtilde = lambda t,x, t_vec=self.time_grid: self.__compute_rtilde(x, Ht[jnp.argmin(t_vec-t)], 
+                                             Ft[jnp.argmin(t_vec-t)])
+        f_fun = lambda t,x,par: self.b_fun(t,x,par)+\
+                                    self.a_fun(t,x,par).dot(rtilde(t,x))
+        self.f_fun = f_fun
+        self.Ht = Ht
+        self.Ft = Ft
+        self.mut = mut
+        self.Lt = Lt
+        self.Mt = Mt
+        self.Mt_inv = Mt_inv
                 
         return
     
@@ -578,25 +737,19 @@ class sde_finite_landmarks(object):
                 theta:jnp.ndarray,
                 vT:jnp.ndarray,
                 Xt:jnp.ndarray,
-                Wt:jnp.ndarray,
-                t_vec:jnp.ndarray)->Tuple[jnp.ndarray, jnp.ndarray]:
+                Wt:jnp.ndarray)->Tuple[jnp.ndarray, jnp.ndarray]:
         
         U = self.sim_uniform()
-        _, Zt = self.sim_Wt(n_sim=1, n_steps=self.n_steps, dim=self.dim_brown)
+        _, Zt = self.sim_Wt(n_sim=1, grid=self.time_grid, dim=self.dim_brown)
         
         Wt_circ = self.eta*Wt+self.sqrt_eta*Zt
         
-        t, Xt_circ = self.sim_sde(x0, self.f_fun, self.g_fun, Wt = Wt_circ, 
+        _, Xt_circ = self.sim_sde(x0, self.f_fun, self.g_fun, Wt = Wt_circ, 
                                   theta=theta, 
-                                  n_sim=1, n_steps=self.n_steps,
-                                  t0=self.t0, T=self.T)
+                                  grid=self.time_grid)
         
-        psi_Xtcirc = self.__compute_psi(Xt_circ, t, self.Ht, self.Ft, theta)
-        
-        if self.psi_Xt==0.0:
-            A = 1.0
-        else:
-            A = psi_Xtcirc/self.psi_Xt
+        psi_Xtcirc = self.__compute_psi(Xt_circ, self.Ht, self.Ft, theta)
+        A = jnp.exp(psi_Xtcirc-self.psi_Xt)
         
         if U<A:
             Xt = Xt_circ
@@ -622,37 +775,29 @@ class sde_finite_landmarks(object):
         p0_circ = p0+self.delta/2*grad_L(p0)+self.sqrt_delta*Z
         x0_circ = jnp.hstack((self.q0.reshape(-1), p0_circ.reshape(-1)))
 
-        t, Xt_circ = self.sim_sde(x0_circ, self.f_fun, self.g_fun, Wt=Wt,
+        _, Xt_circ = self.sim_sde(x0_circ, self.f_fun, self.g_fun, Wt=Wt,
                                   theta=theta, n_sim=1, 
-                                  n_steps=self.n_steps,
-                                  t0=self.t0, T=self.T)
+                                  grid=self.time_grid)
         
         L_p0_circ = grad_L(p0_circ)
         
-        psi_Xtcirc = self.__compute_psi(Xt_circ, t, self.Ht, self.Ft, theta)
+        psi_Xtcirc = self.__compute_psi(Xt_circ, self.Ht, self.Ft, theta)
         rho_x0circ = self.__compute_rhox0(x0_circ, x0_circ, self.mut[0], 
                                           self.Mt[0], self.Lt[0])
         
-        pi_x0circ = self.pi_prob(x0_circ)
+        pi_x0circ = self.pi_prob(self.q0, p0_circ)
         norm_p0 = multivariate_normal.pdf(p0.reshape(-1),
                                           mean=(p0_circ+self.delta*L_p0_circ/2).reshape(-1), 
                                           cov=self.delta*jnp.eye(len(p0_circ)))
         norm_p0_circ = multivariate_normal.pdf(p0_circ.reshape(-1), 
                                                mean=(p0+self.delta*L_p0/2).reshape(-1), 
                                                cov=self.delta*jnp.eye(len(p0)))
-        
-        if self.psi_Xt==0.0:
-            A = 1.0
-        else:
-            A = (psi_Xtcirc*rho_x0circ*pi_x0circ*norm_p0_circ)/(self.psi_Xt*
-                                                            self.rho_x0*
-                                                            self.pi_x0*
-                                                            norm_p0)
-        ############## A IS NAN!!!!###########################
-        #FROM PSI_XT
-        
-        print(psi_Xtcirc)
-        
+
+        A = ((rho_x0circ*pi_x0circ*norm_p0_circ)/(self.rho_x0*
+                                                        self.pi_x0*
+                                                        norm_p0))
+        A *= jnp.exp(psi_Xtcirc-self.psi_Xt)
+                
         if U<A:
             Xt = Xt_circ
             p0 = p0_circ
@@ -673,8 +818,7 @@ class sde_finite_landmarks(object):
         U = self.sim_uniform(n_sim=1, n_steps=1, dim=1).squeeze()
         
         t_vec, Xt_circ = self.sim_sde(x0, self.f_fun, self.g_fun, theta_circ, n_sim=1, 
-                                  n_steps=self.n_steps, Wt = Wt,
-                                  t0=self.t0, T=self.T)
+                                  Wt = Wt, grid=self.time_grid)
         
         Lt_circ, Mt_circ, mut_circ = self.solve_backward(theta_circ)
         Mt_inv_circ = jnp.linalg.inv(Mt_circ)
@@ -686,7 +830,8 @@ class sde_finite_landmarks(object):
         q_theta = self.q(theta, theta_circ)
         q_theta_circ = self.q(theta_circ, theta)
         
-        A = (psi_Xtcirc*rho_x0circ*q_theta)/(self.psi_Xt*self.rho_x0*q_theta_circ)
+        A = (rho_x0circ*q_theta)/(self.rho_x0*q_theta_circ)
+        A *= jnp.exp(psi_Xtcirc-self.psi_Xt)
         
         if U<A:
             Xt =Xt_circ
@@ -711,20 +856,20 @@ class sde_finite_landmarks(object):
         
         
     def __compute_psi(self, Xt:jnp.ndarray,
-                    t:jnp.ndarray,
                     Ht:jnp.ndarray, #t
                     Ft:jnp.ndarray, #t
                     theta:jnp.ndarray,
                     )->jnp.ndarray:
         
+        n_steps = len(self.time_grid)
         sigma = self.sigma_fun(0,Xt[0],theta)
-        sigma = jnp.zeros((len(t), sigma.shape[0], sigma.shape[1]))
-        for i in range(len(t)):
-            sigma = sigma.at[i].set(self.sigma_fun(t[i], Xt[i], theta))
+        sigma = jnp.zeros((n_steps, sigma.shape[0], sigma.shape[1]))
+        for i in range(n_steps):
+            sigma = sigma.at[i].set(self.sigma_fun(self.time_grid[i], Xt[i], theta))
             
-        b = jnp.zeros((len(t), Xt.shape[-1]))
-        for i in range(len(t)):
-            b = b.at[i].set(self.b_fun(t[i], Xt[i], theta))
+        b = jnp.zeros((n_steps, Xt.shape[-1]))
+        for i in range(n_steps):
+            b = b.at[i].set(self.b_fun(self.time_grid[i], Xt[i], theta))
         
         a = jnp.matmul(sigma, sigma.transpose(0,2,1))
         
@@ -737,10 +882,8 @@ class sde_finite_landmarks(object):
         den = jnp.matmul(a-self.atilde, Ht-val)
         
         Gx = num-1/2*jnp.trace(den,axis1=1, axis2=2)
-                        
-        dt = t[1]-t[0]
-        
-        return jnp.exp(self.ri_trapez(Gx,dt))
+                
+        return self.ri_trapez(Gx,self.time_grid)
     
     def __solve_backward(self, theta:jnp.ndarray
                          )->Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray]:
@@ -749,7 +892,7 @@ class sde_finite_landmarks(object):
         betatilde_fun = lambda t, par=theta: self.betatilde_fun(t, par)
         Btilde_fun = lambda t, par=theta: self.Btilde_fun(t, par)
         
-        t = jnp.linspace(self.T, self.t0, self.n_steps) #Reverse order
+        t = self.reverse_time_grid
         LT_dim = list(self.LT.shape)
         LT_dim_flatten = math.prod(LT_dim)
         SigmaT_dim = list(self.SigmaT.shape)
@@ -822,8 +965,8 @@ class sde_finite_landmarks(object):
     def __compute_rtildemat(self, Xt:jnp.ndarray,
                          Ht:jnp.ndarray, 
                          Ft:jnp.ndarray)->jnp.ndarray:
-                        
-        return Ft-jnp.einsum('ijk,ik->j', Ht, Xt)
+        
+        return Ft-jnp.einsum('ijk,ik->ij', Ht, Xt)
     
     def __compute_rhotilde(self, Vt:jnp.ndarray,
                          xt:jnp.ndarray,
@@ -846,65 +989,6 @@ class sde_finite_landmarks(object):
         
         #return self.multi_normal_pdf(v0, mean=mean, cov=M0)
         return self.multi_normal_pdf(v, mean=mean, cov=M0)
-    
-#%% Testing
-
-sde = sde_finite_landmarks(seed=900)
-
-def b_fun(t, x, theta):
-    
-    return jnp.ones(4)
-
-def sigma_fun(t, x, theta):
-    
-    return jnp.eye(4)
-
-def sigmatilde_fun(t, theta):
-    
-    return jnp.eye(4)
-
-def betatilde_fun(t, theta):
-    
-    return jnp.zeros(4)
-
-def Btilde_fun(t, theta):
-    
-    return 1.8*jnp.eye(4)
-
-def pi_prob(p0):
-    return multivariate_normal.pdf(p0, mean=jnp.zeros_like(p0),
-                                   cov=100*jnp.eye(len(p0)))
-
-def q_theta(theta_circ, theta):
-    
-    return multivariate_normal.pdf(jnp.log(theta_circ), mean=jnp.log(theta),
-                                   cov=jnp.eye(len(theta)))
-
-def q_sample_theta(theta_circ, theta):
-    
-    theta_circ = sde.sim_multi_normal(mean=jnp.log(theta),cov=jnp.eye(len(theta)))
-    
-    return theta_circ
-    
-p0 = jnp.array([0.0, 0.0]).reshape(-1,1)
-q0 = jnp.array([1.0, 1.0]).reshape(-1,1)
-qT = jnp.array([1.5, 1.5])
-epsilon=1
-SigmaT = epsilon**2*jnp.eye(2)
-LT = jnp.hstack((jnp.eye(2), jnp.zeros((2,2))))
-x0 = jnp.vstack((q0, p0))
-
-vT = qT
-
-val = sde.approx_landmark_sde(q0, p0, vT, SigmaT, LT, b_fun, sigma_fun, 
-                              betatilde_fun, Btilde_fun, sigmatilde_fun, 
-                              pi_prob, q_theta, q_sample_theta,
-                              max_iter=10,
-                              n_steps=100)
-
-
-
-
 
 
 
