@@ -1,0 +1,56 @@
+Loaded module: python3/3.8.2
+WARNING:absl:No GPU/TPU found, falling back to CPU. (Set TF_CPP_MIN_LOG_LEVEL=0 and rerun for more info.)
+Traceback (most recent call last):
+  File "1d_landmarks.py", line 163, in <module>
+    main()
+  File "1d_landmarks.py", line 143, in main
+    _, Xt = sde.approx_p0(q0, p0, vT, SigmaT, LT, time_grid, 
+  File "/zhome/77/8/118225/Desktop/Landmarks/Github/SDE_finite_landmarks/sde_approx.py", line 565, in approx_p0
+    Wt, Xt = self.__approx_p0(Xt, Wt, x0, p0)
+  File "/zhome/77/8/118225/Desktop/Landmarks/Github/SDE_finite_landmarks/sde_approx.py", line 684, in __approx_p0
+    Wt, Xt = self.__al_51(x0, None, self.vT, Xt, Wt)
+  File "/zhome/77/8/118225/Desktop/Landmarks/Github/SDE_finite_landmarks/sde_approx.py", line 741, in __al_51
+    _, Xt_circ = self.sim_sde(x0, self.f_fun, self.g_fun, Wt = Wt_circ, 
+  File "/zhome/77/8/118225/Desktop/Landmarks/Github/SDE_finite_landmarks/sde_approx.py", line 325, in sim_sde
+    f(t_up, sim[i,j-1], theta)*dt+
+  File "/zhome/77/8/118225/Desktop/Landmarks/Github/SDE_finite_landmarks/sde_approx.py", line 545, in <lambda>
+    f_fun = lambda t,x,par: self.b_fun(t,x,par)+\
+  File "/zhome/77/8/118225/Desktop/Landmarks/Github/SDE_finite_landmarks/finite_landmark_models.py", line 176, in __ms_b_fun
+    dp = -(self.lambda_*self.__dH_dq(theta).reshape(-1)+dq)
+  File "/zhome/77/8/118225/Desktop/Landmarks/Github/SDE_finite_landmarks/finite_landmark_models.py", line 133, in __dH_dq
+    return jnp.apply_along_axis(self.__dH_dqi, -1, x, theta)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/numpy/lax_numpy.py", line 4764, in apply_along_axis
+    return func(arr)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/traceback_util.py", line 162, in reraise_with_filtered_traceback
+    return fun(*args, **kwargs)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/api.py", line 1452, in batched_fun
+    out_flat = batching.batch(
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/linear_util.py", line 166, in call_wrapped
+    ans = self.f(*args, **dict(self.params, **kwargs))
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/numpy/lax_numpy.py", line 4759, in <lambda>
+    func = lambda arr: func1d(arr, *args, **kwargs)
+  File "/zhome/77/8/118225/Desktop/Landmarks/Github/SDE_finite_landmarks/finite_landmark_models.py", line 117, in __dH_dqi
+    qi = xi[:N]
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/core.py", line 547, in __getitem__
+    def __getitem__(self, idx): return self.aval._getitem(self, idx)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/interpreters/batching.py", line 105, in aval
+    return core.mapped_aval(aval.shape[self.batch_dim], self.batch_dim, aval)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/core.py", line 1657, in mapped_aval
+    return handler(size, axis, aval)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/core.py", line 1674, in _map_shaped_array
+    return ShapedArray(tuple_delete(aval.shape, axis), aval.dtype,
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/core.py", line 1093, in __init__
+    super().__init__(dtype, weak_type=weak_type)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/core.py", line 1027, in __init__
+    self.dtype = np.dtype(dtypes.canonicalize_dtype(dtype))
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/util.py", line 201, in wrapper
+    return memoized(config._trace_context(), *args, **kwargs)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/config.py", line 330, in _trace_context
+    return (self.x64_enabled, self.jax_numpy_rank_promotion,
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/config.py", line 270, in get_state
+    return val if val is not unset else self._read(name)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/config.py", line 92, in _read
+    self.check_exists(name)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/config.py", line 106, in check_exists
+    if name not in self.values:
+KeyboardInterrupt
