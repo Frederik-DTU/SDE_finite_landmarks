@@ -146,11 +146,12 @@ class sde_finite_landmarks(object):
         
         n_steps = len(grid)
         N = random.normal(self.key,[n_sim, n_steps-1, dim])
+        sqrtdt = jnp.sqrt(jnp.diff(grid, axis=0)).reshape(1,n_steps-1,1)
+        
         Wt = jnp.zeros([n_sim, n_steps, dim])
-        for i in range(1,n_steps):
-            Wt = Wt.at[:,i,:].set(Wt[:,i-1,:]+jnp.sqrt(grid[i]-grid[i-1])*N[:,i-1,:])
+        Wt = Wt.at[:,1:].set(sqrtdt*N)
             
-        return grid, Wt.squeeze()
+        return grid, jnp.cumsum(Wt, axis=1).squeeze()
     
     def sim_dWt(self, n_sim:int=1, grid:jnp.ndarray=jnp.linspace(0, 1, 100), 
                dim:int=1)->Tuple[jnp.ndarray, jnp.ndarray]:
@@ -180,11 +181,9 @@ class sde_finite_landmarks(object):
         
         n_steps = len(grid)
         N = random.normal(self.key,[n_sim, n_steps-1, dim])
-        dWt = jnp.zeros([n_sim, n_steps, dim])
-        for i in range(1,n_steps):
-            dWt = dWt.at[:,i,:].set(jnp.sqrt(grid[i]-grid[i-1])*N[:,i-1,:])
+        sqrtdt = jnp.sqrt(jnp.diff(grid, axis=0)).reshape(1,n_steps-1,1)
             
-        return grid, dWt.squeeze()
+        return grid, (sqrtdt*N).squeeze()
     
     def sim_multi_normal(self, mu:jnp.ndarray = jnp.zeros(2),
                sigma:jnp.ndarray=jnp.eye(2),
@@ -317,8 +316,8 @@ class sde_finite_landmarks(object):
         else:
             dWt = jnp.diff(Wt, axis=0).reshape([n_sim, n_steps-1, dim_brown])
 
+        sim = sim.at[:,0].set(x0)
         for i in range(n_sim):
-            sim = sim.at[i,0].set(x0)
             for j in range(1,n_steps):
                 t_up = grid[j]
                 dt = grid[j]-grid[j-1]
@@ -332,8 +331,7 @@ class sde_finite_landmarks(object):
     
     def ito_integral(self, Xt:jnp.ndarray,
                      n_sim_int:int = 10,
-                     t0:float=0.0,
-                     T:float=1.0)->jnp.ndarray:
+                     grid:jnp.ndarray=jnp.linspace(0,1,100))->jnp.ndarray:
         
         """Estimates the Ito integral
 
@@ -368,8 +366,7 @@ class sde_finite_landmarks(object):
             dim=shape[2]
         
         Xt = Xt.reshape(n_sim, n_steps, dim)
-        dt = (T-t0)/n_steps  
-        dWt = jnp.sqrt(dt)*random.normal(self.key, [n_sim_int, n_steps-1, dim])
+        dWt = self.sim_dWt(n_sim, grid, dim)
 
         self.key += 1
 
@@ -377,8 +374,8 @@ class sde_finite_landmarks(object):
     
     def stratonovich_integral(self, Xt:jnp.ndarray,
                               n_sim_int:int = 10,
-                              t0:float=0.0,
-                              T:float=1.0)->jnp.ndarray:
+                              grid:jnp.ndarray = jnp.linspace(0,1,100)
+                              )->jnp.ndarray:
         
         """Estimates the Stratonovich Integral
 
@@ -413,8 +410,7 @@ class sde_finite_landmarks(object):
             dim=shape[2]
         
         Xt = Xt.reshape(n_sim, n_steps, dim)
-        dt = (T-t0)/n_steps 
-        dWt = jnp.sqrt(dt)*random.normal(self.key, [n_sim_int, n_steps-1, dim])
+        dWt = self.sim_dWt(n_sim, grid, dim)
         
         self.key += 1
                                 
@@ -437,12 +433,10 @@ class sde_finite_landmarks(object):
         Estimation of the Riemannian integral
         """
         
-        n = len(grid)
-        ri = 0.0
-        for i in range(n):
-            ri += (ft[i]+ft[i+1])*(grid[i+1]-grid[i])/2
+        f = ft[1:]-ft[:-1]
+        t = grid[1:]-grid[:-1]
             
-        return ri
+        return (f*t).sum(axis=0)/2
     
     def hessian(self, fun:Callable[[jnp.ndarray], jnp.ndarray]
                 )->Callable[[jnp.ndarray], jnp.ndarray]:
@@ -686,7 +680,7 @@ class sde_finite_landmarks(object):
         time_diff = datetime.timedelta(hours=self.save_hours)
         start_time = datetime.datetime.now()
         for i in range(self.max_iter):
-            #print("Computing iteration: ", i+1)
+            print("Computing iteration: ", i+1)
             Wt, Xt = self.__al_51(x0, None, self.vT, Xt, Wt)
             p0, Xt = self.__al_52(p0, None, self.vT, Xt, Wt)
             x0 = jnp.hstack((self.q0.reshape(-1), p0.reshape(-1)))
@@ -751,6 +745,8 @@ class sde_finite_landmarks(object):
         psi_Xtcirc = self.__compute_psi(Xt_circ, self.Ht, self.Ft, theta)
         A = jnp.exp(psi_Xtcirc-self.psi_Xt)
         
+        print(A)
+        
         if U<A:
             Xt = Xt_circ
             Wt = Wt_circ
@@ -797,6 +793,8 @@ class sde_finite_landmarks(object):
                                                         self.pi_x0*
                                                         norm_p0))
         A *= jnp.exp(psi_Xtcirc-self.psi_Xt)
+        
+        print(A)
                 
         if U<A:
             Xt = Xt_circ

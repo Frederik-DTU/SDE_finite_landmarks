@@ -71,15 +71,15 @@ def parse_args():
                         type=str)
     
     #Hyper-parameters
-    parser.add_argument('--eta', default=0.1, 
+    parser.add_argument('--eta', default=0.1,  #0.1
                         type=float)
-    parser.add_argument('--delta', default=0.1, 
+    parser.add_argument('--delta', default=0.1, #0.1 
                         type=float)
     parser.add_argument('--lambda_', default=1.0, 
                         type=float)
     parser.add_argument('--epsilon', default=0.001,
                         type=float)
-    parser.add_argument('--time_step', default=0.01, #0.001
+    parser.add_argument('--time_step', default=0.01, #0.001,
                         type=float)
     parser.add_argument('--t0', default=0.0, 
                         type=float)
@@ -89,7 +89,7 @@ def parse_args():
     #Iteration parameters
     parser.add_argument('--seed', default=2712, 
                         type=int)
-    parser.add_argument('--max_iter', default=20000, 
+    parser.add_argument('--max_iter', default=20000, #20000, 
                         type=int)
     parser.add_argument('--save_hours', default=1.0, 
                         type=float)
@@ -130,11 +130,19 @@ def main():
     b_fun, sigma_fun = land.get_ms_model(gamma, dim = [2*n, d], lambda_=args.lambda_)
     betatilde_fun, Btilde_fun, sigmatilde_fun = land.get_ms_approx_model(gamma, 
                                                                      [2*n,d], qT, 
-                                                                     args.lambda_)    
+                                                                     args.lambda_)   
     
+    betatilde = betatilde_fun(0) #Since constant in time
+    Btilde = Btilde_fun(0) #Since constant in time
+    sigmatilde = sigmatilde_fun(0) #Since constant in time
+    
+    betatilde_funfast = lambda t,theta: betatilde #Since constant in time
+    Btilde_funfast = lambda t,theta: Btilde #Since constant in time
+    sigmatilde_funfast = lambda t,theta: sigmatilde #Since constant in time
+        
     _, Xt = sde.approx_p0(q0, p0, vT, SigmaT, LT, time_grid, 
                         b_fun, sigma_fun, 
-                        betatilde_fun, Btilde_fun, sigmatilde_fun, 
+                        betatilde_funfast, Btilde_funfast, sigmatilde_funfast, 
                         pi_x0,
                         theta = None,
                         max_iter = args.max_iter,
