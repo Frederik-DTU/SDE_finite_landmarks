@@ -12,7 +12,7 @@ Created on Sun Sep 19 17:26:30 2021
 
 #JAX Modules
 import jax.numpy as jnp
-from jax import random, jacfwd, jacrev, grad
+from jax import random, grad
 
 #From scipy
 from scipy.integrate import odeint
@@ -46,21 +46,17 @@ class sde_finite_landmarks(object):
     reset_seed(seed:int)->type(None)
         Updates the seed value
         
-    sim_Wt(n_sim:int=10, n_steps:int=100, dim:int=1,t0:float = 0.0, 
-           T:float = 1.0)->Tuple[jnp.ndarray, jnp.ndarray]
+    sim_Wt(n_sim:int=10, n_steps:int=100, grid:jnp.ndarray=jnp.linspace(0,1,100),
+           dim:int=1)->Tuple[jnp.ndarray, jnp.ndarray]
         Simulates Wiener process
         
-    sim_multi_normal(mu:jnp.ndarray = jnp.zeros(2),sigma:jnp.ndarray=jnp.eye(2),
-               dim:List[int] = [1])
-        Simulates multivariate normal distribution
+    sim_dWt(n_sim:int=10, n_steps:int=100, grid:jnp.ndarray=jnp.linspace(0,1,100),
+           dim:int=1)->Tuple[jnp.ndarray, jnp.ndarray]
+        Simulates infinitesimal Wiener process
         
     multi_normal_pdf(x:jnp.ndarray, mean:jnp.ndarray = None,
                      cov:jnp.ndarray=None)->jnp.ndarray
         Computes the density of a multivariate normal evaluated at x
-        
-    sim_uniform(a:float = 0.0, b:float = 1.0, 
-                dim:List[int]=1)->jnp.ndarray
-        Simulates uniformly distributed variables
         
     sim_sde(x0:jnp.ndarray, 
             f:Callable[[jnp.ndarray, jnp.ndarray], jnp.ndarray],
@@ -68,31 +64,24 @@ class sde_finite_landmarks(object):
             Wt:jnp.ndarray = None,
             theta:jnp.ndarray = None, #Parameters of the model
             n_sim:int = 10, 
-            n_steps:int=100, 
-            t0:float = 0.0,
-            T:float = 1.0)->Tuple[jnp.ndarray, jnp.ndarray]
+            grid:jnp.ndarray=jnp.linspace(0,1,100)
+            )->Tuple[jnp.ndarray, jnp.ndarray]
         Simulates an Ito Process
         
     ito_integral(Xt:jnp.ndarray,
                 n_sim_int:int = 10,
-                t0:float=0.0,
-                T:float=1.0)->jnp.ndarray
+                tgrid:jnp.ndarray=jnp.linspace(0,1,100)
+                )->jnp.ndarray
         Estimates the Ito integral
         
     stratonovich_integral(Xt:jnp.ndarray,
                           n_sim_int:int = 10,
-                          t0:float=0.0,
-                          T:float=1.0)->jnp.ndarray:
+                          grid:jnp.ndarray=jnp.linspace(0,1,100)
+                          )->jnp.ndarray:
         Estimates the Stratonovich Integral
         
-    ri_trapez(t:jnp.ndarray, h:float)->jnp.ndarray
+    ri_trapez(t:jnp.ndarray, grid:jnp.ndarray=jnp.linspace(0,1,100))->jnp.ndarray
         Estimates the Riemennian integral using the trapez method
-        
-    hessian(fun:Callable[[jnp.ndarray], jnp.ndarray])->Callable[[jnp.ndarray], jnp.ndarray]
-        Computes the hessian of a function
-        
-    jacobian(fun:Callable[[jnp.ndarray], jnp.ndarray])->Callable[[jnp.ndarray],jnp.ndarray]
-        Computes the jacobian of a function
         
     """
     def __init__(self, seed:int = 2712):
@@ -121,26 +110,21 @@ class sde_finite_landmarks(object):
     def sim_Wt(self, n_sim:int=1, grid:jnp.ndarray=jnp.linspace(0, 1, 100), 
                dim:int=1)->Tuple[jnp.ndarray, jnp.ndarray]:
         
-        """Simulates n_sim for dim dimensional Wiener processes with n_steps
-        on the time interval t0 to T on a uniform grid
+        """Simulates n_sim for dim dimensional Wiener processes on a grid
 
         Parameters
         ----------
         n_sim : int, optional
             number of realisations
-        n_steps : int, optional
-            number of steps
-        dim : int, optinal
+        grid : jnp.ndarray, optional
+            time grid with grid[0]=t0 and grid[-1]=T of length n_steps
+        dim : int, optional
             dimension of the Wiener process
-        t0 : float, optional
-            start time
-        T : float, optional
-            End time
             
         Returns
         -------
         tuple of
-        -the time grid, t
+        -the time grid, grid
         -The squeezed wiener process, Wt
         """
         
@@ -156,63 +140,29 @@ class sde_finite_landmarks(object):
     def sim_dWt(self, n_sim:int=1, grid:jnp.ndarray=jnp.linspace(0, 1, 100), 
                dim:int=1)->Tuple[jnp.ndarray, jnp.ndarray]:
         
-        """Simulates n_sim for dim dimensional Wiener processes with n_steps
-        on the time interval t0 to T on a uniform grid
+        """Simulates n_sim for dim dimensional dWt on a grid
 
         Parameters
         ----------
         n_sim : int, optional
             number of realisations
-        n_steps : int, optional
-            number of steps
-        dim : int, optinal
+        grid : jnp.ndarray, optional
+            time grid with grid[0]=t0 and grid[-1]=T of length n_steps
+        dim : int, optional
             dimension of the Wiener process
-        t0 : float, optional
-            start time
-        T : float, optional
-            End time
             
         Returns
         -------
         tuple of
         -the time grid, t
-        -The squeezed wiener process, Wt
+        -The squeezed dWt
         """
         
         n_steps = len(grid)
         N = random.normal(self.key,[n_sim, n_steps-1, dim])
         sqrtdt = jnp.sqrt(jnp.diff(grid, axis=0)).reshape(1,n_steps-1,1)
             
-        return grid, (sqrtdt*N).squeeze()
-    
-    def sim_multi_normal(self, mu:jnp.ndarray = jnp.zeros(2),
-               sigma:jnp.ndarray=jnp.eye(2),
-               dim:List[int] = [1])->jnp.ndarray:
-        
-        """Simulates dim dimensional multivariate normal variables
-
-        Parameters
-        ----------
-        mu : jnp.ndarray, optional
-            mean
-        sigma : jnp.ndarray, optional
-            covariance matrix
-        dim : List[int], optinal
-            dimension of the samples
-            
-        Returns
-        -------
-        Squeezed normal distributed variables with dimension (dim, mu.shape)
-        """
-        
-        N = random.multivariate_normal(self.key,
-                                       mean = mu,
-                                       cov=sigma,
-                                       shape=dim)
-        
-        self.key += 1
-        
-        return N.squeeze()
+        return grid[1:], (sqrtdt*N).squeeze()
     
     def multi_normal_pdf(self, x:jnp.ndarray,
                          mean:jnp.ndarray = None,
@@ -225,49 +175,29 @@ class sde_finite_landmarks(object):
         mu : jnp.ndarray
             evaluation point of pdf
         mu : jnp.ndarray, optional
-            mean
+            mean, default 0
         sigma : jnp.ndarray, optional
-            covariance matrix
+            covariance matrix, default identity
             
         Returns
         -------
         Density at x as jnp.ndarray
         """
         
+        k = len(x)
+        if mean is None:
+            mean = jnp.zeros(k)
+        if cov is None:
+            cov = jnp.eye(k)
+        
         cov_inv = jnp.linalg.inv(cov)
         x_diff = x-mean
-        k = len(x)
+        
         num = jnp.exp(-1/2*(x_diff).T.dot(cov_inv).dot(x_diff))
         den = jnp.sqrt(jnp.linalg.det(cov)*(2*jnp.pi)**k)
         val = num/den
         
         return val
-    
-    def sim_uniform(self, a:float = 0.0, b:float = 1.0, 
-                    dim:List[int]=[1])->jnp.ndarray:
-        
-        """Simulates dim dimensional uniformly distributed variables
-
-        Parameters
-        ----------
-        a : float, optional
-            start point
-        b : float, optional
-            end point
-        dim : List[int], optinal
-            dimension of the samples
-            
-        Returns
-        -------
-        Squeezed uniformly distributed variables with dimension dim
-        """
-        
-        U = random.uniform(self.key, shape=dim,
-                       minval=a, maxval=b)
-        
-        self.key += 1
-        
-        return U
     
     def sim_sde(self, x0:jnp.ndarray, 
                 f:Callable[[jnp.ndarray, jnp.ndarray], jnp.ndarray],
@@ -293,12 +223,8 @@ class sde_finite_landmarks(object):
             Wiener process of appropiate dimension
         n_sim : int, optional
             number of realisations
-        n_steps : int, optional
-            number of steps on the uniform time grid
-        t0 : float, optional
-            start time
-        T : float, optional
-            end time
+        grid : jnp.ndarray, optional
+            time grid with grid[0]=t0 and grid[-1]=T of length n_steps
             
         Returns
         -------
@@ -307,15 +233,16 @@ class sde_finite_landmarks(object):
         -The squeezed Ito process, Xt
         """
         
-        dim_brown = g(0,x0, theta).shape[-1]
+        dim_brown = g(0, x0, theta).shape[-1]
         n_steps = len(grid)
         sim = jnp.zeros([n_sim, n_steps]+list(x0.shape))
         
         if Wt is None:
-            dWt = self.sim_dWt(n_sim=n_sim, grid=grid, dim=dim_brown)
+            _, dWt = self.sim_dWt(n_sim=n_sim, grid=grid, dim=dim_brown)
         else:
             dWt = jnp.diff(Wt, axis=0).reshape([n_sim, n_steps-1, dim_brown])
-
+        
+        dWt = dWt.reshape(n_sim, n_steps-1, dim_brown)
         sim = sim.at[:,0].set(x0)
         for i in range(n_sim):
             for j in range(1,n_steps):
@@ -341,10 +268,8 @@ class sde_finite_landmarks(object):
             Stochastic process of dimension (n_sim, n_steps, dim) or (n_steps, dim)
         n_sim_int : int, optional
             Simulations of the Ito integral
-        t0 : float, optional
-            start time
-        T : float, optional
-            end time
+        grid : jnp.ndarray, optional
+            time grid with grid[0]=t0 and grid[-1]=T of length n_steps
             
         Returns
         -------
@@ -366,7 +291,7 @@ class sde_finite_landmarks(object):
             dim=shape[2]
         
         Xt = Xt.reshape(n_sim, n_steps, dim)
-        dWt = self.sim_dWt(n_sim, grid, dim)
+        _, dWt = self.sim_dWt(n_sim, grid, dim)
 
         self.key += 1
 
@@ -385,10 +310,8 @@ class sde_finite_landmarks(object):
             Stochastic process of dimension (n_sim, n_steps, dim) or (n_steps, dim)
         n_sim_int : int, optional
             Simulations of the Ito integral
-        t0 : float, optional
-            start time
-        T : float, optional
-            end time
+        grid : jnp.ndarray, optional
+            time grid with grid[0]=t0 and grid[-1]=T of length n_steps
             
         Returns
         -------
@@ -402,15 +325,15 @@ class sde_finite_landmarks(object):
             raise ValueError("Gt must be at least 2 dimensional!")
         elif lshape==2:
             n_sim=1
-            n_steps=shape[1]
-            dim=shape[2]
+            n_steps=shape[0]
+            dim=shape[1]
         else:
             n_sim=shape[0]
             n_steps=shape[1]
             dim=shape[2]
         
         Xt = Xt.reshape(n_sim, n_steps, dim)
-        dWt = self.sim_dWt(n_sim, grid, dim)
+        _, dWt = self.sim_dWt(n_sim, grid, dim)
         
         self.key += 1
                                 
@@ -425,72 +348,83 @@ class sde_finite_landmarks(object):
         ----------
         ft : jnp.ndarray
             evaluation of the function
-        h : float
-            step size
+        grid : jnp.ndarray, optional
+            time grid with grid[0]=t0 and grid[-1]=T of length n_steps
             
         Returns
         -------
         Estimation of the Riemannian integral
         """
         
-        f = ft[1:]-ft[:-1]
+        f = ft[1:]+ft[:-1]
         t = grid[1:]-grid[:-1]
             
         return (f*t).sum(axis=0)/2
-    
-    def hessian(self, fun:Callable[[jnp.ndarray], jnp.ndarray]
-                )->Callable[[jnp.ndarray], jnp.ndarray]:
-        
-        """Computes the Hessian matrix using autodifferentation
-
-        Parameters
-        ----------
-        fun : Callable[[jnp.ndarray], jnp.ndarray]
-            function of the form f(x)
-            
-        Returns
-        -------
-        Hessian
-        """
-        
-        return jacfwd(jacrev((fun)))
-    
-    def jacobian(self, fun:Callable[[jnp.ndarray], jnp.ndarray]
-                 )->Callable[[jnp.ndarray],jnp.ndarray]:
-        
-        """Computes the Jacobian matrix using autodifferentation
-
-        Parameters
-        ----------
-        fun : Callable[[jnp.ndarray], jnp.ndarray]
-            function of the form f(X)
-            
-        Returns
-        -------
-        Jacobian
-        """
-        
-        return jacfwd(fun)
     
     def approx_p0(self, q0:jnp.ndarray,
                   p0:jnp.ndarray,
                   vT:jnp.ndarray,
                   SigmaT:jnp.ndarray,
                   LT:jnp.ndarray,
-                  time_grid:jnp.ndarray,
                   b_fun:Callable[[jnp.ndarray, jnp.ndarray, jnp.ndarray], jnp.ndarray],
                   sigma_fun:Callable[[jnp.ndarray, jnp.ndarray, jnp.ndarray], jnp.ndarray],
                   betatilde_fun:Callable[[jnp.ndarray, jnp.ndarray], jnp.ndarray],
                   Btilde_fun:Callable[[jnp.ndarray, jnp.ndarray], jnp.ndarray],
                   sigmatilde_fun:Callable[[jnp.ndarray, jnp.ndarray], jnp.ndarray],
                   pi_prob:Callable[[jnp.ndarray, jnp.ndarray], jnp.ndarray],
-                  theta:jnp.ndarray = None,
+                  time_grid:jnp.ndarray = jnp.linspace(0,1,100),
                   max_iter:int = 100,
                   eta:float=0.5,
                   delta:float=0.1,
                   save_path:str='',
                   save_hours:float=1.0,
-                  )->jnp.ndarray:
+                  )->Tuple[jnp.ndarray, jnp.ndarray]:
+        
+        """Approximates the unkown initial momentum p0 for x0=(q0,p0) for
+        finite dimensional landmarks
+
+        Parameters
+        ----------
+        q0 : jnp.ndarray
+           Initial value of the landmarks
+        p0 : jnp.ndarray
+            Guess for the initial momentum
+        vT : jnp.ndarray
+            Observed end point for qT
+        SigmaT :jnp.ndarray
+            Noise for observations of vT, i.e. vT \sim N(LTxT, SigmaT)
+        LT : jnp.ndarray
+            Operator such that LTxT=qT is observed
+        b_fun : Callable[[jnp.ndarray, jnp.ndarray, jnp.ndarray], jnp.ndarray]
+            Drift term for dXt=b_fun(t,Xt,theta)dt+sigma_fun(t,Xt,theta)dWt
+        sigma_fun : Callable[[jnp.ndarray, jnp.ndarray, jnp.ndarray], jnp.ndarray]
+            Diffusion term for dXt=b_fun(t,Xt,theta)dt+sigma_fun(t,Xt,theta)dWt
+        betatilde_fun : Callable[[jnp.ndarray, jnp.ndarray], jnp.ndarray]
+            Drift term for auxially process with betatilde_fun(t,theta)+Btilde_fun(t,theta)Xt
+        Btilde_fun : Callable[[jnp.ndarray, jnp.ndarray], jnp.ndarray]
+            Drift term for auxially process with betatilde_fun(t,theta)+Btilde_fun(t,theta)Xt
+        sigmatilde_fun : Callable[[jnp.ndarray, jnp.ndarray], jnp.ndarray]
+            Diffusion term for auxially process
+        pi_prob : Callable[[jnp.ndarray, jnp.ndarray], jnp.ndarray]
+            The prior distribution for (q,p)
+        time_grid : jnp.ndarray, optional
+            time grid with grid[0]=t0 and grid[-1]=T of length n_steps
+        max_iter : int, optional
+            Number of iterations
+        eta : float, optional
+            'Step-size' in fitting of Xt with eta\in[0,1]
+        delta : float, optional
+            'Step-size' in fitting of p0 with delta>0
+        save_path : str, optional
+            Path to save intemediate computations
+        save_hours : float, optional
+            Saving computations after save_hours hours
+        
+            
+        Returns
+        -------
+        Realisations of Wt and diffusion bridge Xt
+        """
         
         if len(q0.shape)==1:
             q0 = q0.reshape(-1,1)
@@ -500,9 +434,7 @@ class sde_finite_landmarks(object):
         
         x0 = jnp.hstack((q0.reshape(-1), p0.reshape(-1)))
         
-        a_fun = lambda t,x,par: self.sigma_fun(t, x, par).dot(\
-                                self.sigma_fun(t, x, par).transpose())
-        g_fun = lambda t,x,par: self.sigma_fun(t,x,par)
+        a_fun = lambda t,x,par: sigma_fun(t, x, None).dot(sigma_fun(t, x, None).T)
         
         self.q0 = q0
         self.vT = vT
@@ -522,132 +454,48 @@ class sde_finite_landmarks(object):
         self.delta = delta
         self.sqrt_delta = jnp.sqrt(delta)
         self.dim = len(x0)
-        self.dim_brown = sigma_fun(0,x0, theta).shape[-1]
-        self.a_fun = a_fun
-        self.g_fun = g_fun
+        self.dim_brown = sigma_fun(0,x0, None).shape[-1]
         self.dn = len(q0.reshape(-1))
-        self.sigmatilde = jnp.apply_along_axis(self.sigmatilde_fun, 1, 
-                                         time_grid.reshape(-1,1), theta)
-        self.atilde = jnp.matmul(self.sigmatilde, self.sigmatilde.transpose(0,2,1))
-        self.betatilde = jnp.apply_along_axis(self.betatilde_fun, 1, 
-                                         time_grid.reshape(-1,1), theta)
-        self.Btilde = jnp.apply_along_axis(self.Btilde_fun, 1, 
-                                         time_grid.reshape(-1,1), theta)
+        self.a_fun = a_fun
         self.save_path = save_path
         self.save_hours = save_hours
         
-        Lt, Mt, mut = self.__solve_backward(theta)
-        Mt_inv = jnp.linalg.inv(Mt)
-        Ft = self.__compute_Ft(Lt, Mt_inv, self.vT, mut)
-        Ht = self.__compute_Ht(Lt, Mt_inv)
-        rtilde = lambda t,x, t_vec=time_grid: self.__compute_rtilde(x, Ht[jnp.argmin(t_vec-t)], 
-                                             Ft[jnp.argmin(t_vec-t)])
-        f_fun = lambda t,x,par: self.b_fun(t,x,par)+\
-                                    self.a_fun(t,x,par).dot(rtilde(t,x))
-        self.f_fun = f_fun
-        self.Ht = Ht
-        self.Ft = Ft
-        self.mut = mut
-        self.Lt = Lt
-        self.Mt = Mt
-        self.Mt_inv = Mt_inv
-        
-        _, Wt = self.sim_Wt(n_sim=1, grid=time_grid, dim=self.dim_brown)
-        
-        _, Xt = self.sim_sde(x0, self.f_fun, self.g_fun, Wt = Wt, 
-                                  theta=theta, 
-                                  grid=self.time_grid)
-        
-        self.psi_Xt = self.__compute_psi(Xt, self.Ht, self.Ft, theta)
-        self.rho_x0 = self.__compute_rhox0(x0, x0, self.mut[0], self.Mt[0], self.Lt[0])
-        self.pi_x0 = pi_prob(q0, p0)
-        
-        Wt, Xt = self.__approx_p0(Xt, Wt, x0, p0)
+        Wt, Xt = self.__approx_p0(x0, p0)
             
         return Wt, Xt
     
-    def approx_landmark_sde(self, q0:jnp.ndarray,
-                            p0:jnp.ndarray,
-                            vT:jnp.ndarray,
-                            SigmaT:jnp.ndarray,
-                            LT:jnp.ndarray,
-                            b_fun:Callable[[jnp.ndarray, jnp.ndarray, jnp.ndarray], jnp.ndarray],
-                            sigma_fun:Callable[[jnp.ndarray, jnp.ndarray, jnp.ndarray], jnp.ndarray],
-                            betatilde_fun:Callable[[jnp.ndarray, jnp.ndarray], jnp.ndarray],
-                            Btilde_fun:Callable[[jnp.ndarray, jnp.ndarray], jnp.ndarray],
-                            sigmatilde_fun:Callable[[jnp.ndarray, jnp.ndarray], jnp.ndarray],
-                            pi_prob:Callable[[jnp.ndarray], jnp.ndarray],
-                            q_theta:Callable[[jnp.ndarray, jnp.ndarray], jnp.ndarray],
-                            q_sample_theta:Callable[[jnp.ndarray], jnp.ndarray],
-                            theta:jnp.ndarray = None,
-                            max_iter:int = 100,
-                            eta:float=0.5,
-                            delta:float=0.01,
-                            n_steps:int = 100,
-                            t0:float=0.0,
-                            T:float=1.0,
-                            save_path:str='',
-                            save_hours:float=1.0,
-                            )->Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray]:
+    def __approx_p0(self, x0:jnp.ndarray, p0:jnp.ndarray
+                    )->Tuple[jnp.ndarray, jnp.ndarray]:
         
-        if len(q0.shape)==1:
-            q0 = q0.reshape(-1,1)
+        """Approximates the unkown initial momentum p0 for x0=(q0,p0) for
+        finite dimensional landmarks
+
+        Parameters
+        ----------
+        x0 : jnp.ndarray
+           Initial value
+        p0 : jnp.ndarray
+            Guess for the initial momentum
             
-        if len(p0.shape)==1:
-            p0 = p0.reshape(-1,1)
+        Returns
+        -------
+        Realisations of Wt and diffusion bridge Xt
+        """
         
-        x0 = jnp.hstack((q0.reshape(-1), p0.reshape(-1)))
-        a_fun = lambda t,x,par: self.sigma_fun(t, x, par).dot(\
-                                self.sigma_fun(t, x, par).transpose())
-        g_fun = lambda t,x,par: self.sigma_fun(t,x,par)
-        
-        self.q0 = q0
-        self.vT = vT
-        self.SigmaT = SigmaT
-        self.LT = LT
-        self.b_fun = b_fun
-        self.sigma_fun = sigma_fun
-        self.betatilde_fun = betatilde_fun
-        self.Btilde_fun = Btilde_fun
-        self.sigmatilde_fun = sigmatilde_fun
-        self.pi_prob = pi_prob
-        self.q_theta = q_theta
-        self.q_sample_theta = q_sample_theta
-        self.max_iter = max_iter 
-        self.eta = eta
-        self.sqrt_eta = jnp.sqrt(1-eta**2)
-        self.delta = delta
-        self.sqrt_delta = jnp.sqrt(delta)
-        self.n_steps = n_steps
-        self.t0 = t0
-        self.T = T
-        self.dim = len(x0)
-        self.dim_brown = sigma_fun(0,x0, theta).shape[-1]
-        self.a_fun = a_fun
-        self.g_fun = g_fun
-        self.dn = len(q0.reshape(-1))
-        self.save_path = save_path
-        self.save_hours = save_hours
-        
-        t_vec, Wt = self.sim_Wt(n_sim=1, n_steps=n_steps, dim=self.dim_brown, 
-                            t0=t0, T=T)
-        
-        self.sigmatilde = jnp.apply_along_axis(self.sigmatilde_fun, 1, 
-                                         t_vec.reshape(-1,1), theta)
-        self.atilde = jnp.matmul(self.sigmatilde, self.sigmatilde.transpose(0,2,1))
-        self.betatilde = jnp.apply_along_axis(self.betatilde_fun, 1, 
-                                         t_vec.reshape(-1,1), theta)
-        self.Btilde = jnp.apply_along_axis(self.Btilde_fun, 1, 
-                                         t_vec.reshape(-1,1), theta)
-        
-        Lt, Mt, mut = self.__solve_backward(theta)
+        Lt, Mt, mut = self.__solve_backward(None)
         Mt_inv = jnp.linalg.inv(Mt)
         Ft = self.__compute_Ft(Lt, Mt_inv, self.vT, mut)
         Ht = self.__compute_Ht(Lt, Mt_inv)
-        rtilde = lambda t,x, t_vec=t_vec: self.__compute_rtilde(x, Ht[jnp.argmin(t_vec-t)], 
-                                             Ft[jnp.argmin(t_vec-t)])
-        f_fun = lambda t,x,par: self.b_fun(t,x,par)+\
-                                    self.a_fun(t,x,par).dot(rtilde(t,x))
+        rtilde = lambda t,x, grid=self.time_grid: \
+            self.__compute_rtilde(x, Ht[jnp.argmin(grid-t)], Ft[jnp.argmin(grid-t)])
+        f_fun = lambda t,x,par: self.b_fun(t,x,None)+\
+                                    self.a_fun(t,x,None).dot(rtilde(t,x))
+        
+        _, Wt = self.sim_Wt(n_sim=1, grid=self.time_grid, dim=self.dim_brown)
+        _, Xt = self.sim_sde(x0, f_fun, self.sigma_fun, Wt = Wt, 
+                                  theta=None, 
+                                  grid=self.time_grid)
+        
         self.f_fun = f_fun
         self.Ht = Ht
         self.Ft = Ft
@@ -655,34 +503,16 @@ class sde_finite_landmarks(object):
         self.Lt = Lt
         self.Mt = Mt
         self.Mt_inv = Mt_inv
-        
-        t_vec, Xt = self.sim_sde(x0, self.f_fun, self.g_fun, Wt = Wt, 
-                                  theta=theta, 
-                                  n_sim=1, n_steps=self.n_steps,
-                                  t0=self.t0, T=self.T)
-        
-        self.psi_Xt = self.__compute_psi(Xt, t_vec, self.Ht, self.Ft, theta)
-        self.rho_x0 = self.__compute_rhox0(x0, x0, self.mut[0], self.Mt[0], self.Lt[0])
-        self.pi_x0 = self.pi_prob(Xt[0])
-        
-        if theta is None:
-            Wt, Xt = self.__approx_p0(t_vec, Xt, Wt, x0, p0)
-        else:
-            Wt, Xt, theta = self.__approx_p0_theta(t_vec, Xt, Wt, x0, p0, 
-                                                   theta)
-            
-        return Wt, Xt, theta
-    
-    def __approx_p0(self, Xt:jnp.ndarray, Wt:jnp.ndarray,
-                    x0:jnp.ndarray, p0:jnp.ndarray
-                    )->Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray]:
+        self.psi_Xt = self.__compute_logpsi(Xt, self.Ht, self.Ft, None)
+        self.rho_x0 = self.__compute_rhox0(x0, self.mut[0], self.Mt[0], self.Lt[0])
+        self.pi_x0 = self.pi_prob(self.q0, p0)
         
         time_diff = datetime.timedelta(hours=self.save_hours)
         start_time = datetime.datetime.now()
         for i in range(self.max_iter):
             print("Computing iteration: ", i+1)
-            Wt, Xt = self.__al_51(x0, None, self.vT, Xt, Wt)
-            p0, Xt = self.__al_52(p0, None, self.vT, Xt, Wt)
+            Wt, Xt = self.__al_51(x0, None, Wt)
+            p0, Xt = self.__al_52(p0, None, Wt)
             x0 = jnp.hstack((self.q0.reshape(-1), p0.reshape(-1)))
             current_time = datetime.datetime.now()
             if current_time - start_time >= time_diff:
@@ -713,8 +543,8 @@ class sde_finite_landmarks(object):
         Mt_inv = jnp.linalg.inv(Mt)
         Ft = self.__compute_Ft(Lt, Mt_inv, self.vT, mut)
         Ht = self.__compute_Ht(Lt, Mt_inv)
-        rtilde = lambda t,x, t_vec=self.time_grid: self.__compute_rtilde(x, Ht[jnp.argmin(t_vec-t)], 
-                                             Ft[jnp.argmin(t_vec-t)])
+        rtilde = lambda t,x, grid=self.time_grid: \
+            self.__compute_rtilde(x, Ht[jnp.argmin(grid-t)],Ft[jnp.argmin(grid-t)])
         f_fun = lambda t,x,par: self.b_fun(t,x,par)+\
                                     self.a_fun(t,x,par).dot(rtilde(t,x))
         self.f_fun = f_fun
@@ -729,79 +559,113 @@ class sde_finite_landmarks(object):
     
     def __al_51(self, x0:jnp.ndarray,
                 theta:jnp.ndarray,
-                vT:jnp.ndarray,
-                Xt:jnp.ndarray,
                 Wt:jnp.ndarray)->Tuple[jnp.ndarray, jnp.ndarray]:
         
-        U = self.sim_uniform()
+        """Updated (Wt,Xt) condtional on (x0,theta,vT)
+
+        Parameters
+        ----------
+        x0 : jnp.ndarray
+           Initial value
+        theta : jnp.ndarray
+            Array of parameters
+        Wt : jnp.ndarray
+            Wiener process
+            
+        Returns
+        -------
+        Realisations of Wt and diffusion bridge Xt
+        """
+        
+        U = random.uniform(self.key)
+        self.key += 1
+        
         _, Zt = self.sim_Wt(n_sim=1, grid=self.time_grid, dim=self.dim_brown)
         
         Wt_circ = self.eta*Wt+self.sqrt_eta*Zt
         
-        _, Xt_circ = self.sim_sde(x0, self.f_fun, self.g_fun, Wt = Wt_circ, 
+        _, Xt_circ = self.sim_sde(x0, self.f_fun, self.sigma_fun, Wt = Wt_circ, 
                                   theta=theta, 
                                   grid=self.time_grid)
         
-        psi_Xtcirc = self.__compute_psi(Xt_circ, self.Ht, self.Ft, theta)
+        psi_Xtcirc = self.__compute_logpsi(Xt_circ, self.Ht, self.Ft, theta)
         A = jnp.exp(psi_Xtcirc-self.psi_Xt)
-        
-        print(A)
-        
+                
         if U<A:
+            print("\t-Update (W,X) conditioned on (x0,theta,vT) A={:.4}: Accepted".format(A))
             Xt = Xt_circ
             Wt = Wt_circ
             self.psi_Xt = psi_Xtcirc
+        else:
+            print("\t-Update (W,X) conditioned on (x0,theta,vT) A={:.4}: Rejected".format(A))
             
         return Wt, Xt
     
     def __al_52(self, p0:jnp.ndarray,
                 theta:jnp.ndarray,
-                vT:jnp.ndarray,
-                Xt:jnp.ndarray,
                 Wt:jnp.ndarray)->Tuple[jnp.ndarray, jnp.ndarray]:
         
-        U = self.sim_uniform()
-        Z = self.sim_multi_normal(mu=jnp.zeros(self.dn), sigma=jnp.eye(self.dn)).reshape(p0.shape)
-                
-        L_theta = lambda p0, q0=self.q0, theta=theta, Wt=Wt, \
-            Xt=Xt: self.__compute_Ltheta(jnp.hstack((self.q0,p0)).reshape(-1), theta, Wt, Xt)
+        """Updated (p0,Xt) condtional on (q0,theta,W,vT)
+
+        Parameters
+        ----------
+        p0 : jnp.ndarray
+           Initial value
+        theta : jnp.ndarray
+            Array of parameters
+        Wt : jnp.ndarray
+            Wiener process
+            
+        Returns
+        -------
+        Initial momentum p0 and diffusion bridge Xt
+        """
+        
+        U = random.uniform(self.key)
+        self.key += 1
+        
+        Z = random.multivariate_normal(self.key,mean=jnp.zeros(self.dn),
+                                   cov=jnp.eye(self.dn)).reshape(p0.shape)
+        self.key += 1
+                     
+        L_theta = lambda p0, theta=theta, Wt=Wt: self.__compute_Ltheta(p0, theta, Wt)
         grad_L = grad(L_theta)
         L_p0 = grad_L(p0)
         
-        p0_circ = p0+self.delta/2*grad_L(p0)+self.sqrt_delta*Z
+        p0_circ = p0+self.delta/2*L_p0+self.sqrt_delta*Z
         x0_circ = jnp.hstack((self.q0.reshape(-1), p0_circ.reshape(-1)))
 
-        _, Xt_circ = self.sim_sde(x0_circ, self.f_fun, self.g_fun, Wt=Wt,
+        _, Xt_circ = self.sim_sde(x0_circ, self.f_fun, self.sigma_fun, Wt=Wt,
                                   theta=theta, n_sim=1, 
                                   grid=self.time_grid)
         
         L_p0_circ = grad_L(p0_circ)
-        
-        psi_Xtcirc = self.__compute_psi(Xt_circ, self.Ht, self.Ft, theta)
-        rho_x0circ = self.__compute_rhox0(x0_circ, x0_circ, self.mut[0], 
+        L_p0 = grad_L(p0)
+
+        psi_Xtcirc = self.__compute_logpsi(Xt_circ, self.Ht, self.Ft, theta)
+        rho_x0circ = self.__compute_rhox0(x0_circ, self.mut[0], 
                                           self.Mt[0], self.Lt[0])
-        
         pi_x0circ = self.pi_prob(self.q0, p0_circ)
+        
         norm_p0 = multivariate_normal.pdf(p0.reshape(-1),
                                           mean=(p0_circ+self.delta*L_p0_circ/2).reshape(-1), 
-                                          cov=self.delta*jnp.eye(len(p0_circ)))
+                                          cov=self.delta*jnp.eye(self.dn))
         norm_p0_circ = multivariate_normal.pdf(p0_circ.reshape(-1), 
                                                mean=(p0+self.delta*L_p0/2).reshape(-1), 
-                                               cov=self.delta*jnp.eye(len(p0)))
+                                               cov=self.delta*jnp.eye(self.dn))
 
-        A = ((rho_x0circ*pi_x0circ*norm_p0_circ)/(self.rho_x0*
-                                                        self.pi_x0*
-                                                        norm_p0))
+        A = ((rho_x0circ*pi_x0circ*norm_p0)/(self.rho_x0*self.pi_x0*norm_p0_circ))
         A *= jnp.exp(psi_Xtcirc-self.psi_Xt)
-        
-        print(A)
-                
+                        
         if U<A:
+            print("\t-Update (p0,X) conditioned on (q0,theta,W,vT) A={:.4}: Accepted".format(A))
             Xt = Xt_circ
             p0 = p0_circ
             self.psi_Xt = psi_Xtcirc
             self.rho_x0 = rho_x0circ
             self.pi_x0 = pi_x0circ
+        else:
+            print("\t-Update (p0,X) conditioned on (q0,theta,W,vT) A={:.4}: Rejected".format(A))
         
         return p0, Xt
     
@@ -813,7 +677,8 @@ class sde_finite_landmarks(object):
         
         theta_circ = self.q_sample(theta)
         
-        U = self.sim_uniform(n_sim=1, n_steps=1, dim=1).squeeze()
+        U = random.uniform(self.key)
+        self.key += 1
         
         t_vec, Xt_circ = self.sim_sde(x0, self.f_fun, self.g_fun, theta_circ, n_sim=1, 
                                   Wt = Wt, grid=self.time_grid)
@@ -822,7 +687,7 @@ class sde_finite_landmarks(object):
         Mt_inv_circ = jnp.linalg.inv(Mt_circ)
         Ft_circ = self.__compute_Ft(Lt_circ, Mt_inv_circ, vT, mut_circ)
         Ht_circ = self.__compute_Ht(Lt_circ, Mt_inv_circ)
-        psi_Xtcirc = self.__compute_psi(Xt_circ, t_vec, Ht_circ, Ft_circ)
+        psi_Xtcirc = self.__compute_logpsi(Xt_circ, t_vec, Ht_circ, Ft_circ)
         rho_x0circ = self.__compute_rhox0(x0, mut_circ[0], Mt_circ[0], Lt_circ[0])
         
         q_theta = self.q(theta, theta_circ)
@@ -841,21 +706,39 @@ class sde_finite_landmarks(object):
         return theta, Xt
     
         
-    def __compute_Ltheta(self, x0:jnp.ndarray,
-                         theta:jnp.ndarray,
-                         Wt:jnp.ndarray,
-                         Xt:jnp.ndarray)->jnp.ndarray:
+    def __compute_Ltheta(self, p0:jnp.ndarray, theta:jnp.ndarray,
+                         Wt:jnp.ndarray)->jnp.ndarray:
         
-        val1 = jnp.log(self.psi_Xt)
-        val2 = jnp.log(self.__compute_rhox0(x0, x0, 
-                                            self.mut[0], self.Mt[0], self.Lt[0]))
+        """L(p0,W) when updating (p0,Xt) condtional on (q0,theta,W,vT)
+
+        Parameters
+        ----------
+        p0 : jnp.ndarray
+           Initial value
+        theta : jnp.ndarray
+            Array of parameters
+        Wt : jnp.ndarray
+            Wiener process
+            
+        Returns
+        -------
+        log Psi Xt + log rhotilde(0,x0)
+        """
         
-        return val1+val2
+        x0 = jnp.hstack((self.q0.reshape(-1),p0.reshape(-1)))
+        _, Xt = self.sim_sde(x0, self.f_fun, self.sigma_fun, Wt=Wt,
+                                  theta=theta, n_sim=1, 
+                                  grid=self.time_grid)
+        
+        logpsi_Xt = self.__compute_logpsi(Xt, self.Ht, self.Ft, theta)
+        
+        return logpsi_Xt+ \
+            jnp.log(self.__compute_rhox0(x0,self.mut[0], self.Mt[0], self.Lt[0]))
         
         
-    def __compute_psi(self, Xt:jnp.ndarray,
-                    Ht:jnp.ndarray, #t
-                    Ft:jnp.ndarray, #t
+    def __compute_logpsi(self, Xt:jnp.ndarray,
+                    Ht:jnp.ndarray,
+                    Ft:jnp.ndarray,
                     theta:jnp.ndarray,
                     )->jnp.ndarray:
         
@@ -869,15 +752,22 @@ class sde_finite_landmarks(object):
         for i in range(n_steps):
             b = b.at[i].set(self.b_fun(self.time_grid[i], Xt[i], theta))
         
-        a = jnp.matmul(sigma, sigma.transpose(0,2,1))
+        a_mat = jnp.matmul(sigma, sigma.transpose(0,2,1))
+        sigmatilde_mat = jnp.apply_along_axis(self.sigmatilde_fun, 1, 
+                                              self.time_grid.reshape(-1,1), theta)
+        atilde_mat = jnp.matmul(sigmatilde_mat, sigmatilde_mat.transpose(0,2,1))
+        betatilde_mat = jnp.apply_along_axis(self.betatilde_fun, 1, 
+                                         self.time_grid.reshape(-1,1), theta)
+        Btilde_mat = jnp.apply_along_axis(self.Btilde_fun, 1, 
+                                         self.time_grid.reshape(-1,1), theta)
         
-        btilde = self.betatilde+jnp.einsum('ijn,in->ij', self.Btilde, Xt)
+        btilde = betatilde_mat+jnp.einsum('ijn,in->ij', Btilde_mat, Xt)
         rtilde = self.__compute_rtildemat(Xt, Ht, Ft)[...,jnp.newaxis]
                 
         val = Ht-jnp.matmul(rtilde, rtilde.transpose(0,2,1))
         
         num = jnp.einsum('ij,ij->i', b-btilde, rtilde.squeeze())
-        den = jnp.matmul(a-self.atilde, Ht-val)
+        den = jnp.matmul(a_mat-atilde_mat, Ht-val)
         
         Gx = num-1/2*jnp.trace(den,axis1=1, axis2=2)
                 
@@ -957,11 +847,12 @@ class sde_finite_landmarks(object):
     def __compute_rtilde(self, xt:jnp.ndarray,
                          Ht:jnp.ndarray, 
                          Ft:jnp.ndarray)->jnp.ndarray:
+        #COULD BE A BUG HERE -NOT SURE
         
         return Ft-jnp.einsum('jk,k->j', Ht, xt)
     
     def __compute_rtildemat(self, Xt:jnp.ndarray,
-                         Ht:jnp.ndarray, 
+                         Ht:jnp.ndarray,
                          Ft:jnp.ndarray)->jnp.ndarray:
         
         return Ft-jnp.einsum('ijk,ik->ij', Ht, Xt)
@@ -976,16 +867,14 @@ class sde_finite_landmarks(object):
                 
         return multivariate_normal.pdf(Vt, mean=mean, cov=Mt)
     
-    def __compute_rhox0(self, v0:jnp.ndarray,
-                        x0:jnp.ndarray,
-                        mu:jnp.ndarray,
+    def __compute_rhox0(self, x0:jnp.ndarray,
+                        mu0:jnp.ndarray,
                         M0:jnp.ndarray,
                         L0:jnp.ndarray)->jnp.ndarray:
         
         v = jnp.einsum('jk,k->j', L0, x0)
-        mean = mu+v
+        mean = mu0+v
         
-        #return self.multi_normal_pdf(v0, mean=mean, cov=M0)
         return self.multi_normal_pdf(v, mean=mean, cov=M0)
 
 

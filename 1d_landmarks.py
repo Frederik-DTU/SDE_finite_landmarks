@@ -140,11 +140,11 @@ def main():
     Btilde_funfast = lambda t,theta: Btilde #Since constant in time
     sigmatilde_funfast = lambda t,theta: sigmatilde #Since constant in time
         
-    _, Xt = sde.approx_p0(q0, p0, vT, SigmaT, LT, time_grid, 
+    _, Xt = sde.approx_p0(q0, p0, vT, SigmaT, LT, 
                         b_fun, sigma_fun, 
                         betatilde_funfast, Btilde_funfast, sigmatilde_funfast, 
                         pi_x0,
-                        theta = None,
+                        time_grid = time_grid,
                         max_iter = args.max_iter,
                         eta = args.eta,
                         delta = args.delta,
