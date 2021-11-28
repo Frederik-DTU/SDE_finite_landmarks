@@ -1,0 +1,308 @@
+Computing iteration:  1
+	-Update (W,X) conditioned on (x0,theta,vT) A=1.0: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=0.9967: Accepted
+Computing iteration:  2
+	-Update (W,X) conditioned on (x0,theta,vT) A=1.0: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=0.9979: Accepted
+Computing iteration:  3
+	-Update (W,X) conditioned on (x0,theta,vT) A=1.0: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=0.9997: Accepted
+Computing iteration:  4
+	-Update (W,X) conditioned on (x0,theta,vT) A=1.0: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=0.9849: Accepted
+Computing iteration:  5
+	-Update (W,X) conditioned on (x0,theta,vT) A=1.0: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=0.9978: Accepted
+Computing iteration:  6
+	-Update (W,X) conditioned on (x0,theta,vT) A=1.0: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=0.9977: Accepted
+Computing iteration:  7
+	-Update (W,X) conditioned on (x0,theta,vT) A=1.0: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=1.011: Accepted
+Computing iteration:  8
+	-Update (W,X) conditioned on (x0,theta,vT) A=1.0: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=0.9977: Accepted
+Computing iteration:  9
+	-Update (W,X) conditioned on (x0,theta,vT) A=1.0: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=0.9849: Accepted
+Computing iteration:  10
+	-Update (W,X) conditioned on (x0,theta,vT) A=1.0: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=1.002: Accepted
+Computing iteration:  11
+	-Update (W,X) conditioned on (x0,theta,vT) A=1.0: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=1.003: Accepted
+Computing iteration:  12
+	-Update (W,X) conditioned on (x0,theta,vT) A=1.0: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=1.002: Accepted
+Saving iteration:  12
+Computing iteration:  13
+	-Update (W,X) conditioned on (x0,theta,vT) A=1.0: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=1.005: Accepted
+Computing iteration:  14
+	-Update (W,X) conditioned on (x0,theta,vT) A=1.0: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=0.9999: Accepted
+Computing iteration:  15
+	-Update (W,X) conditioned on (x0,theta,vT) A=1.0: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=1.003: Accepted
+Computing iteration:  16
+	-Update (W,X) conditioned on (x0,theta,vT) A=1.0: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=1.006: Accepted
+Computing iteration:  17
+	-Update (W,X) conditioned on (x0,theta,vT) A=1.0: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=1.004: Accepted
+Computing iteration:  18
+	-Update (W,X) conditioned on (x0,theta,vT) A=1.0: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=0.9995: Accepted
+Computing iteration:  19
+	-Update (W,X) conditioned on (x0,theta,vT) A=1.0: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=1.006: Accepted
+Computing iteration:  20
+	-Update (W,X) conditioned on (x0,theta,vT) A=1.0: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=0.9997: Accepted
+Computing iteration:  21
+	-Update (W,X) conditioned on (x0,theta,vT) A=1.0: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=0.9993: Accepted
+Computing iteration:  22
+	-Update (W,X) conditioned on (x0,theta,vT) A=1.0: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=1.001: Accepted
+Computing iteration:  23
+	-Update (W,X) conditioned on (x0,theta,vT) A=1.0: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=0.9993: Accepted
+Computing iteration:  24
+	-Update (W,X) conditioned on (x0,theta,vT) A=1.0: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=1.0: Accepted
+Saving iteration:  24
+Computing iteration:  25
+	-Update (W,X) conditioned on (x0,theta,vT) A=1.0: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=0.9992: Accepted
+Computing iteration:  26
+	-Update (W,X) conditioned on (x0,theta,vT) A=1.0: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=0.9955: Accepted
+Computing iteration:  27
+	-Update (W,X) conditioned on (x0,theta,vT) A=1.0: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=0.9993: Accepted
+Computing iteration:  28
+	-Update (W,X) conditioned on (x0,theta,vT) A=1.0: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=0.9901: Accepted
+Computing iteration:  29
+	-Update (W,X) conditioned on (x0,theta,vT) A=1.0: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=0.9819: Accepted
+Computing iteration:  30
+	-Update (W,X) conditioned on (x0,theta,vT) A=1.0: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=1.016: Accepted
+Computing iteration:  31
+	-Update (W,X) conditioned on (x0,theta,vT) A=1.0: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=0.9968: Accepted
+Computing iteration:  32
+	-Update (W,X) conditioned on (x0,theta,vT) A=1.0: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=0.9984: Accepted
+Computing iteration:  33
+	-Update (W,X) conditioned on (x0,theta,vT) A=1.0: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=0.9862: Accepted
+Computing iteration:  34
+	-Update (W,X) conditioned on (x0,theta,vT) A=1.0: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=1.002: Accepted
+Computing iteration:  35
+	-Update (W,X) conditioned on (x0,theta,vT) A=1.0: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=1.007: Accepted
+Computing iteration:  36
+	-Update (W,X) conditioned on (x0,theta,vT) A=1.0: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=0.9852: Accepted
+Saving iteration:  36
+Computing iteration:  37
+	-Update (W,X) conditioned on (x0,theta,vT) A=1.0: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=1.015: Accepted
+Computing iteration:  38
+	-Update (W,X) conditioned on (x0,theta,vT) A=1.0: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=1.0: Accepted
+Computing iteration:  39
+	-Update (W,X) conditioned on (x0,theta,vT) A=1.0: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=1.002: Accepted
+Computing iteration:  40
+	-Update (W,X) conditioned on (x0,theta,vT) A=1.0: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=1.002: Accepted
+Computing iteration:  41
+	-Update (W,X) conditioned on (x0,theta,vT) A=1.0: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=1.002: Accepted
+Computing iteration:  42
+	-Update (W,X) conditioned on (x0,theta,vT) A=1.0: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=0.9925: Accepted
+Computing iteration:  43
+	-Update (W,X) conditioned on (x0,theta,vT) A=0.9999: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=1.007: Accepted
+Computing iteration:  44
+	-Update (W,X) conditioned on (x0,theta,vT) A=1.0: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=0.9963: Accepted
+Computing iteration:  45
+	-Update (W,X) conditioned on (x0,theta,vT) A=1.0: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=0.9881: Accepted
+Computing iteration:  46
+	-Update (W,X) conditioned on (x0,theta,vT) A=1.0: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=1.006: Accepted
+Computing iteration:  47
+	-Update (W,X) conditioned on (x0,theta,vT) A=1.0: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=0.9936: Accepted
+Computing iteration:  48
+	-Update (W,X) conditioned on (x0,theta,vT) A=1.0: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=0.9933: Accepted
+Saving iteration:  48
+Computing iteration:  49
+	-Update (W,X) conditioned on (x0,theta,vT) A=1.0: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=1.01: Accepted
+Computing iteration:  50
+	-Update (W,X) conditioned on (x0,theta,vT) A=1.0: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=0.9938: Accepted
+Computing iteration:  51
+	-Update (W,X) conditioned on (x0,theta,vT) A=1.0: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=1.005: Accepted
+Computing iteration:  52
+	-Update (W,X) conditioned on (x0,theta,vT) A=1.0: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=1.002: Accepted
+Computing iteration:  53
+	-Update (W,X) conditioned on (x0,theta,vT) A=1.0: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=1.009: Accepted
+Computing iteration:  54
+	-Update (W,X) conditioned on (x0,theta,vT) A=1.0: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=0.9917: Accepted
+Computing iteration:  55
+	-Update (W,X) conditioned on (x0,theta,vT) A=1.0: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=1.004: Accepted
+Computing iteration:  56
+	-Update (W,X) conditioned on (x0,theta,vT) A=1.0: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=1.007: Accepted
+Computing iteration:  57
+	-Update (W,X) conditioned on (x0,theta,vT) A=1.0: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=0.9944: Accepted
+Computing iteration:  58
+	-Update (W,X) conditioned on (x0,theta,vT) A=1.0: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=1.0: Accepted
+Computing iteration:  59
+	-Update (W,X) conditioned on (x0,theta,vT) A=1.0: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=0.9961: Accepted
+Computing iteration:  60
+	-Update (W,X) conditioned on (x0,theta,vT) A=1.0: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=1.003: Accepted
+Saving iteration:  60
+Computing iteration:  61
+	-Update (W,X) conditioned on (x0,theta,vT) A=1.0: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=0.9894: Accepted
+Computing iteration:  62
+	-Update (W,X) conditioned on (x0,theta,vT) A=1.0: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=1.009: Accepted
+Computing iteration:  63
+	-Update (W,X) conditioned on (x0,theta,vT) A=1.0: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=0.9872: Accepted
+Computing iteration:  64
+	-Update (W,X) conditioned on (x0,theta,vT) A=1.0: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=0.9996: Accepted
+Computing iteration:  65
+	-Update (W,X) conditioned on (x0,theta,vT) A=1.0: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=0.9963: Accepted
+Computing iteration:  66
+	-Update (W,X) conditioned on (x0,theta,vT) A=0.9997: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=0.9856: Accepted
+Computing iteration:  67
+	-Update (W,X) conditioned on (x0,theta,vT) A=1.0: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=1.003: Accepted
+Computing iteration:  68
+	-Update (W,X) conditioned on (x0,theta,vT) A=1.0: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=1.001: Accepted
+Computing iteration:  69
+	-Update (W,X) conditioned on (x0,theta,vT) A=1.0: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=1.006: Accepted
+Computing iteration:  70
+	-Update (W,X) conditioned on (x0,theta,vT) A=1.0: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=0.9978: Accepted
+Computing iteration:  71
+	-Update (W,X) conditioned on (x0,theta,vT) A=0.9998: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=0.991: Accepted
+Computing iteration:  72
+	-Update (W,X) conditioned on (x0,theta,vT) A=1.0: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=0.979: Accepted
+Saving iteration:  72
+Computing iteration:  73
+	-Update (W,X) conditioned on (x0,theta,vT) A=0.9998: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=1.006: Accepted
+Computing iteration:  74
+	-Update (W,X) conditioned on (x0,theta,vT) A=0.9999: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=0.9866: Accepted
+Computing iteration:  75
+	-Update (W,X) conditioned on (x0,theta,vT) A=1.0: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=0.9886: Accepted
+Computing iteration:  76
+	-Update (W,X) conditioned on (x0,theta,vT) A=0.9999: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=1.007: Accepted
+Computing iteration:  77
+	-Update (W,X) conditioned on (x0,theta,vT) A=1.0: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=1.014: Accepted
+Computing iteration:  78
+	-Update (W,X) conditioned on (x0,theta,vT) A=1.0: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=1.006: Accepted
+Computing iteration:  79
+	-Update (W,X) conditioned on (x0,theta,vT) A=1.0: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=1.019: Accepted
+Computing iteration:  80
+	-Update (W,X) conditioned on (x0,theta,vT) A=1.0: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=1.003: Accepted
+Computing iteration:  81
+	-Update (W,X) conditioned on (x0,theta,vT) A=1.0: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=0.9958: Accepted
+Computing iteration:  82
+	-Update (W,X) conditioned on (x0,theta,vT) A=1.0: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=1.015: Accepted
+Computing iteration:  83
+	-Update (W,X) conditioned on (x0,theta,vT) A=1.0: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=0.9857: Accepted
+Computing iteration:  84
+	-Update (W,X) conditioned on (x0,theta,vT) A=1.0: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=0.9791: Accepted
+Saving iteration:  84
+Computing iteration:  85
+	-Update (W,X) conditioned on (x0,theta,vT) A=1.0: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=1.02: Accepted
+Computing iteration:  86
+	-Update (W,X) conditioned on (x0,theta,vT) A=1.0: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=1.007: Accepted
+Computing iteration:  87
+	-Update (W,X) conditioned on (x0,theta,vT) A=1.0: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=1.01: Accepted
+Computing iteration:  88
+	-Update (W,X) conditioned on (x0,theta,vT) A=1.0: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=0.982: Accepted
+Computing iteration:  89
+	-Update (W,X) conditioned on (x0,theta,vT) A=1.0: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=1.011: Accepted
+Computing iteration:  90
+	-Update (W,X) conditioned on (x0,theta,vT) A=1.0: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=0.9912: Accepted
+Computing iteration:  91
+	-Update (W,X) conditioned on (x0,theta,vT) A=1.0: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=1.001: Accepted
+Computing iteration:  92
+	-Update (W,X) conditioned on (x0,theta,vT) A=1.0: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=1.008: Accepted
+Computing iteration:  93
+	-Update (W,X) conditioned on (x0,theta,vT) A=1.0: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=0.9912: Accepted
+Computing iteration:  94
+	-Update (W,X) conditioned on (x0,theta,vT) A=1.0: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=1.006: Accepted
+Computing iteration:  95
+	-Update (W,X) conditioned on (x0,theta,vT) A=1.0: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=0.9894: Accepted
+Saving iteration:  95
+Computing iteration:  96
+	-Update (W,X) conditioned on (x0,theta,vT) A=0.9999: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=1.005: Accepted
+Computing iteration:  97
+	-Update (W,X) conditioned on (x0,theta,vT) A=1.0: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=0.9905: Accepted
+Computing iteration:  98
+	-Update (W,X) conditioned on (x0,theta,vT) A=1.0: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=1.006: Accepted
+Computing iteration:  99
+	-Update (W,X) conditioned on (x0,theta,vT) A=1.0: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=1.002: Accepted
+Computing iteration:  100
+	-Update (W,X) conditioned on (x0,theta,vT) A=1.0: Accepted
+	-Update (p0,X) conditioned on (q0,theta,W,vT) A=0.9703: Rejected
