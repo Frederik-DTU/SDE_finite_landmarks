@@ -441,6 +441,7 @@ class sde_finite_landmarks(object):
         self.SigmaT = SigmaT
         self.LT = LT
         self.time_grid = time_grid
+        self.n_steps = len(time_grid)
         self.reverse_time_grid = time_grid[::-1] #Reverse order
         self.b_fun = b_fun
         self.sigma_fun = sigma_fun
@@ -490,6 +491,14 @@ class sde_finite_landmarks(object):
             self.__compute_rtilde(x, Ht[jnp.argmin(grid-t)], Ft[jnp.argmin(grid-t)])
         f_fun = lambda t,x,par: self.b_fun(t,x,None)+\
                                     self.a_fun(t,x,None).dot(rtilde(t,x))
+        sigmatilde_mat = jnp.apply_along_axis(self.sigmatilde_fun, 1, 
+                                              self.time_grid.reshape(-1,1), None)
+        atilde_mat = jnp.matmul(sigmatilde_mat, sigmatilde_mat.transpose(0,2,1))
+        betatilde_mat = jnp.apply_along_axis(self.betatilde_fun, 1, 
+                                         self.time_grid.reshape(-1,1), None)
+        Btilde_mat = jnp.apply_along_axis(self.Btilde_fun, 1, 
+                                         self.time_grid.reshape(-1,1), None)                            
+        
         
         _, Wt = self.sim_Wt(n_sim=1, grid=self.time_grid, dim=self.dim_brown)
         _, Xt = self.sim_sde(x0, f_fun, self.sigma_fun, Wt = Wt, 
@@ -503,6 +512,10 @@ class sde_finite_landmarks(object):
         self.Lt = Lt
         self.Mt = Mt
         self.Mt_inv = Mt_inv
+        self.sigmatilde_mat = sigmatilde_mat
+        self.atilde_mat = atilde_mat
+        self.betatilde_mat = betatilde_mat
+        self.Btilde_mat = Btilde_mat
         self.psi_Xt = self.__compute_logpsi(Xt, self.Ht, self.Ft, None)
         self.rho_x0 = self.__compute_rhox0(x0, self.mut[0], self.Mt[0], self.Lt[0])
         self.pi_x0 = self.pi_prob(self.q0, p0)
@@ -511,8 +524,8 @@ class sde_finite_landmarks(object):
         start_time = datetime.datetime.now()
         for i in range(self.max_iter):
             print("Computing iteration: ", i+1)
-            Wt, Xt = self.__al_51(x0, None, Wt)
-            p0, Xt = self.__al_52(p0, None, Wt)
+            Wt, Xt = self.__al_51(x0, Xt, None, Wt)
+            p0, Xt = self.__al_52(p0, Xt, None, Wt)
             x0 = jnp.hstack((self.q0.reshape(-1), p0.reshape(-1)))
             current_time = datetime.datetime.now()
             if current_time - start_time >= time_diff:
@@ -547,6 +560,15 @@ class sde_finite_landmarks(object):
             self.__compute_rtilde(x, Ht[jnp.argmin(grid-t)],Ft[jnp.argmin(grid-t)])
         f_fun = lambda t,x,par: self.b_fun(t,x,par)+\
                                     self.a_fun(t,x,par).dot(rtilde(t,x))
+                                    
+        sigmatilde_mat = jnp.apply_along_axis(self.sigmatilde_fun, 1, 
+                                              self.time_grid.reshape(-1,1), theta)
+        atilde_mat = jnp.matmul(sigmatilde_mat, sigmatilde_mat.transpose(0,2,1))
+        betatilde_mat = jnp.apply_along_axis(self.betatilde_fun, 1, 
+                                         self.time_grid.reshape(-1,1), theta)
+        Btilde_mat = jnp.apply_along_axis(self.Btilde_fun, 1, 
+                                         self.time_grid.reshape(-1,1), theta)
+                                    
         self.f_fun = f_fun
         self.Ht = Ht
         self.Ft = Ft
@@ -554,10 +576,15 @@ class sde_finite_landmarks(object):
         self.Lt = Lt
         self.Mt = Mt
         self.Mt_inv = Mt_inv
+        self.sigmatilde_mat = sigmatilde_mat
+        self.atilde_mat = atilde_mat
+        self.betatilde_mat = betatilde_mat
+        self.Btilde_mat = Btilde_mat
                 
         return
     
     def __al_51(self, x0:jnp.ndarray,
+                Xt:jnp.ndarray,
                 theta:jnp.ndarray,
                 Wt:jnp.ndarray)->Tuple[jnp.ndarray, jnp.ndarray]:
         
@@ -567,6 +594,8 @@ class sde_finite_landmarks(object):
         ----------
         x0 : jnp.ndarray
            Initial value
+        Xt : jnp.ndarray
+            Guided proposal
         theta : jnp.ndarray
             Array of parameters
         Wt : jnp.ndarray
@@ -602,6 +631,7 @@ class sde_finite_landmarks(object):
         return Wt, Xt
     
     def __al_52(self, p0:jnp.ndarray,
+                Xt:jnp.ndarray,
                 theta:jnp.ndarray,
                 Wt:jnp.ndarray)->Tuple[jnp.ndarray, jnp.ndarray]:
         
@@ -611,6 +641,8 @@ class sde_finite_landmarks(object):
         ----------
         p0 : jnp.ndarray
            Initial value
+        Xt : jnp.ndarray
+            Guided proposal
         theta : jnp.ndarray
             Array of parameters
         Wt : jnp.ndarray
@@ -722,7 +754,7 @@ class sde_finite_landmarks(object):
             
         Returns
         -------
-        log Psi Xt + log rhotilde(0,x0)
+        log Psi Xt + log rhotilde(0,x0) as jnp.ndarray
         """
         
         x0 = jnp.hstack((self.q0.reshape(-1),p0.reshape(-1)))
@@ -742,64 +774,83 @@ class sde_finite_landmarks(object):
                     theta:jnp.ndarray,
                     )->jnp.ndarray:
         
-        n_steps = len(self.time_grid)
-        sigma = self.sigma_fun(0,Xt[0],theta)
-        sigma = jnp.zeros((n_steps, sigma.shape[0], sigma.shape[1]))
-        for i in range(n_steps):
+        """log Psi(X^{\circ})
+
+        Parameters
+        ----------
+        Xt : jnp.ndarray
+           Guided proposal
+        Ht : jnp.ndarray
+            Negative Hessian of grad_x log rho_tilde(s,x)
+        Ft : jnp.ndarray
+            Matrix to compute rtilde
+        theta : jnp.ndarray
+            Parameters of the model
+            
+        Returns
+        -------
+        log Psi(X^{\circ}) as jnp.ndarray
+        """
+                
+        sigma = jnp.zeros((self.n_steps, 2*self.dn, self.dim_brown))
+        for i in range(self.n_steps):
             sigma = sigma.at[i].set(self.sigma_fun(self.time_grid[i], Xt[i], theta))
             
-        b = jnp.zeros((n_steps, Xt.shape[-1]))
-        for i in range(n_steps):
+        b = jnp.zeros((self.n_steps, 2*self.dn))
+        for i in range(self.n_steps):
             b = b.at[i].set(self.b_fun(self.time_grid[i], Xt[i], theta))
         
         a_mat = jnp.matmul(sigma, sigma.transpose(0,2,1))
-        sigmatilde_mat = jnp.apply_along_axis(self.sigmatilde_fun, 1, 
-                                              self.time_grid.reshape(-1,1), theta)
-        atilde_mat = jnp.matmul(sigmatilde_mat, sigmatilde_mat.transpose(0,2,1))
-        betatilde_mat = jnp.apply_along_axis(self.betatilde_fun, 1, 
-                                         self.time_grid.reshape(-1,1), theta)
-        Btilde_mat = jnp.apply_along_axis(self.Btilde_fun, 1, 
-                                         self.time_grid.reshape(-1,1), theta)
         
-        btilde = betatilde_mat+jnp.einsum('ijn,in->ij', Btilde_mat, Xt)
+        btilde = self.betatilde_mat+jnp.einsum('ijn,in->ij', self.Btilde_mat, Xt)
         rtilde = self.__compute_rtildemat(Xt, Ht, Ft)[...,jnp.newaxis]
                 
         val = Ht-jnp.matmul(rtilde, rtilde.transpose(0,2,1))
         
-        num = jnp.einsum('ij,ij->i', b-btilde, rtilde.squeeze())
-        den = jnp.matmul(a_mat-atilde_mat, Ht-val)
+        val1 = jnp.einsum('ij,ij->i', b-btilde, rtilde.squeeze())
+        val2 = jnp.matmul(a_mat-self.atilde_mat, val)
         
-        Gx = num-1/2*jnp.trace(den,axis1=1, axis2=2)
+        Gx = val1-1/2*jnp.trace(val2,axis1=1, axis2=2)
                 
         return self.ri_trapez(Gx,self.time_grid)
     
     def __solve_backward(self, theta:jnp.ndarray
                          )->Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray]:
         
-        atilde_fun = lambda t, par=theta: self.sigmatilde_fun(t, par).dot(self.sigmatilde_fun(t, par).transpose())
+        """Solves backward differential matrix equations:
+            dL(t)=-L(t)Btilde(t)dt, L(T)=LT
+            dM(t)=-L(t)atilde(t)L(t)'dt, M(T)=SigmaT
+            dmu(t)=-L(t)betatilde(t)dt, mu(T)=0
+        
+
+        Parameters
+        ----------
+        theta : jnp.ndarray
+            Parameters of the model
+            
+        Returns
+        -------
+        L(t), M(t), mu(t)
+        """
+             
+        
+        atilde_fun = lambda t, par=theta: \
+            self.sigmatilde_fun(t, par).dot(self.sigmatilde_fun(t, par).T)
         betatilde_fun = lambda t, par=theta: self.betatilde_fun(t, par)
         Btilde_fun = lambda t, par=theta: self.Btilde_fun(t, par)
         
-        t = self.reverse_time_grid
         LT_dim = list(self.LT.shape)
         LT_dim_flatten = math.prod(LT_dim)
         SigmaT_dim = list(self.SigmaT.shape)
-                
-        if len(LT_dim)==1:
-            muT=jnp.zeros(1)
-        else:
-            muT = jnp.zeros(LT_dim[0])
+        muT = jnp.zeros(LT_dim[0])
             
-        y0 = jnp.hstack((self.LT.reshape(-1), self.SigmaT.reshape(-1), 
+        yT = jnp.hstack((self.LT.reshape(-1), self.SigmaT.reshape(-1), 
                          muT))
                 
-        y = odeint(self.__backward_fun, y0, t, args=(betatilde_fun,
-                                                 Btilde_fun,
-                                                 atilde_fun,
-                                                 LT_dim,
-                                                 LT_dim_flatten))
+        y = odeint(self.__backward_fun, yT, self.reverse_time_grid, 
+                   args=(betatilde_fun,Btilde_fun,atilde_fun,LT_dim,LT_dim_flatten))
         
-        y = y[::-1] #Reversing the array such that yT=yT
+        y = y[::-1] #Reversing the array such that yT=yT and y0=y0
         
         Lt = y[:, 0:LT_dim_flatten]
         Mt = y[:, LT_dim_flatten:(LT_dim_flatten+math.prod(SigmaT_dim))]
@@ -816,12 +867,40 @@ class sde_finite_landmarks(object):
                        Btilde_fun:Callable[[jnp.ndarray], jnp.ndarray],
                        atilde_fun:Callable[[jnp.ndarray], jnp.ndarray],
                        LT_dim:List[int],
-                       LT_dim_flatten:int):
+                       LT_dim_flatten:int)->jnp.ndarray:
+        
+        """Computes right hand side of differential matrix equations:
+            dL(t)=-L(t)Btilde(t)dt
+            dM(t)=-L(t)atilde(t)L(t)'dt
+            dmu(t)=-L(t)betatilde(t)dt
+        
+
+        Parameters
+        ----------
+        y : jnp.ndarray
+            The flatten array [L(t), M(t), mu(t)]
+        t : jnp.ndarray
+            The time point
+        betatilde_fun : Callable[[jnp.ndarray], jnp.ndarray]
+            The auxillary process drift term, betatilde_fun+Btilde_fun*x
+        Btilde_fun : Callable[[jnp.ndarray], jnp.ndarray]
+            The auxillary process drift term, betatilde_fun+Btilde_fun*x
+        atilde_fun : Callable[[jnp.ndarray], jnp.ndarray]
+            Added drift term in guided proposal, atilde_fun=sigmatilde_fun*sigmatilde_fun'
+        LT_dim : List[int]
+            Dimension LT
+        LT_dim_flatten : int
+            Flatten dimension of LT
+            
+        Returns
+        -------
+        Flatten array [-L(t)Btilde(t), -L(t)atilde(t)L(t)', -L(t)betatilde(t)]
+        """
         
         Lt = y[0:LT_dim_flatten].reshape(LT_dim)
         
         dLt = -jnp.dot(Lt, Btilde_fun(t)) #dL(t)=-L(t)B(t)dt
-        dM = -jnp.dot(jnp.dot(Lt, atilde_fun(t)), Lt.transpose()) #dM(t)=-L(t)a(t)L(t)'dt
+        dM = -jnp.dot(jnp.dot(Lt, atilde_fun(t)), Lt.T) #dM(t)=-L(t)a(t)L(t)'dt
         dmu = -jnp.dot(Lt, betatilde_fun(t))
         
         rhs = jnp.hstack((dLt.reshape(-1), dM.reshape(-1), dmu.reshape(-1)))
@@ -833,12 +912,46 @@ class sde_finite_landmarks(object):
                    vT:jnp.ndarray, #Final observation (qT in landmarks)
                    mut:jnp.ndarray)->jnp.ndarray:
         
+        """Computes F(t) as:
+            F(t)=L(t)'M_inv(t)(v(t)-mu(t))
+
+        Parameters
+        ----------
+        Lt : jnp.ndarray
+            Matrix that solves backward differential equations with L(t)=LT
+        Mt_inv : jnp.ndarray
+            Inverse matrix of M(t) with M(T)=sigmaT
+        vT : jnp.ndarray
+            Observations
+        mut : jnp.ndarray
+            Array that solves mu(T)=0
+            
+        Returns
+        -------
+        jnp.ndarray: L(t)'M_inv(t)(v(t)-mu(t))
+        """
+        
         val = jnp.einsum('ijn,ink->ijk', Lt.transpose(0,2,1), Mt_inv)
         
         return jnp.einsum('inj,ij->in', val, vT.reshape(-1)-mut)
     
     def __compute_Ht(self, Lt:jnp.ndarray, 
                    Mt_inv:jnp.ndarray)->jnp.ndarray:
+        
+        """Computes H(t) as the negative Hessian of grad_x log rhotilde as:
+            H(t)=L(t)'M_inv(t)L(t)
+
+        Parameters
+        ----------
+        Lt : jnp.ndarray
+            Matrix that solves backward differential equations with L(t)=LT
+        Mt_inv : jnp.ndarray
+            Inverse matrix of M(t) with M(T)=sigmaT
+            
+        Returns
+        -------
+        jnp.ndarray: L(t)'M_inv(t)L(t)
+        """
         
         val = jnp.einsum('ijn,ink->ijk', Lt.transpose(0,2,1), Mt_inv)
         
@@ -847,7 +960,23 @@ class sde_finite_landmarks(object):
     def __compute_rtilde(self, xt:jnp.ndarray,
                          Ht:jnp.ndarray, 
                          Ft:jnp.ndarray)->jnp.ndarray:
-        #COULD BE A BUG HERE -NOT SURE
+        
+        """Computes rtilde(t,x) as for fixed t:
+            rtilde(t,x) = F(t)-H(t)x
+
+        Parameters
+        ----------
+        xt : jnp.ndarray
+            State vector
+        Ht : jnp.ndarray
+            Matrix with H(t)=L(t)'M_inv(t)L(t)
+        Ft : jnp.ndarray
+            Matrix with F(t)=L(t)'M_inv(t)(v(t)-mu(t))
+            
+        Returns
+        -------
+        jnp.ndarray: F(t)-H(t)x
+        """
         
         return Ft-jnp.einsum('jk,k->j', Ht, xt)
     
@@ -855,22 +984,77 @@ class sde_finite_landmarks(object):
                          Ht:jnp.ndarray,
                          Ft:jnp.ndarray)->jnp.ndarray:
         
+        """Computes rtilde(t,x) as:
+            rtilde(t,x) = F(t)-H(t)x
+
+        Parameters
+        ----------
+        Xt : jnp.ndarray
+            State vector
+        Ht : jnp.ndarray
+            Matrix with H(t)=L(t)'M_inv(t)L(t)
+        Ft : jnp.ndarray
+            Matrix with F(t)=L(t)'M_inv(t)(v(t)-mu(t))
+            
+        Returns
+        -------
+        jnp.ndarray: F(t)-H(t)x
+        """
+        
         return Ft-jnp.einsum('ijk,ik->ij', Ht, Xt)
     
-    def __compute_rhotilde(self, Vt:jnp.ndarray,
-                         xt:jnp.ndarray,
+    def __compute_rhotilde(self, xt:jnp.ndarray,
                          mut:jnp.ndarray,
                          Mt:jnp.ndarray,
                          Lt:jnp.ndarray)->jnp.ndarray:
         
-        mean = mut+jnp.einsum('jk,k->j', Lt, xt)
+        """Computes rhortilde(t,x) as for fixed t:
+            rhortilde(t,x) = phi(v; mut+Lt*xt, Mt)
+
+        Parameters
+        ----------
+        xt : jnp.ndarray
+            States
+        mut : jnp.ndarray
+            Array that solves mu(T)=0
+        Mt : jnp.ndarray
+            Matrix with M(T)=sigmaT
+        Lt: jnp.ndarray
+            Matrix that solves backward differential equations with L(t)=LT
+            
+        Returns
+        -------
+        jnp.ndarray: phi(v; mut+Lt*xt, Mt)
+        """
+        
+        vt = jnp.einsum('jk,k->j', Lt, xt)
+        mean = mut+vt
                 
-        return multivariate_normal.pdf(Vt, mean=mean, cov=Mt)
+        return multivariate_normal.pdf(vt, mean=mean, cov=Mt)
     
     def __compute_rhox0(self, x0:jnp.ndarray,
                         mu0:jnp.ndarray,
                         M0:jnp.ndarray,
                         L0:jnp.ndarray)->jnp.ndarray:
+        
+        """Computes rhortilde(t,x) as for t=0:
+            rhortilde(t,x) = phi(v; mut+Lt*xt, Mt)
+
+        Parameters
+        ----------
+        x0 : jnp.ndarray
+            States at time 0
+        mu0 : jnp.ndarray
+            Array that solves mu(T)=0 at time 0
+        M0 : jnp.ndarray
+            Matrix with M(T)=sigmaT at t=0
+        L0 : jnp.ndarray
+            Matrix that solves backward differential equations with L(t)=LT at t=0
+            
+        Returns
+        -------
+        jnp.ndarray: phi(v; mut+Lt*xt, Mt)
+        """
         
         v = jnp.einsum('jk,k->j', L0, x0)
         mean = mu0+v

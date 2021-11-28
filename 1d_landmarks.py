@@ -122,8 +122,8 @@ def main():
     qT = jnp.array([-0.5, 0.2, 1.0]).reshape(n,d)
     vT = qT
     
-    #SigmaT = args.epsilon**2*jnp.eye(n)
-    SigmaT = (1/args.epsilon)**2*jnp.eye(n)
+    #SigmaT = (1/args.epsilon)**2*jnp.eye(n)
+    SigmaT = args.epsilon**2*jnp.eye(n)
     gamma = 1/jnp.sqrt(n)*jnp.ones(n)
     LT = jnp.hstack((jnp.eye(n), jnp.zeros((n,n))))
     
