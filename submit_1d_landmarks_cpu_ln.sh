@@ -14,8 +14,8 @@
 #Load the following in case
 module swap python3/3.8.2
 
-python3 1d_landmarks.py \
-    --save_path Model_output/1d_landmarks \
+python3 1d_landmarks_ms.py \
+    --save_path Model_output/low_noise/1d_landmarks \
     --eta 0.1 \
     --delta 0.1 \
     --lambda_ 1.0 \
@@ -26,4 +26,4 @@ python3 1d_landmarks.py \
     --seed 2712 \
     --max_iter 20000 \
     --save_hours 1.0 \
-    --load_model_path Model_output/1d_landmarks_ite_1000
+    --load_model_path Model_output/high_noise/1d_landmarks_ite_1000
