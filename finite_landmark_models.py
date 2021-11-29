@@ -261,6 +261,98 @@ class landmark_models(object):
         
         return self.__tv_b_fun, self.__tv_sigma_fun
     
+    def __tv_betatilde(self, t:jnp.ndarray, theta:jnp.ndarray=None)->jnp.ndarray:
+        
+        """Returns betatilde_fun(t) for the auxiallary process for the tv-model
+
+        Parameters
+        ----------
+        t : jnp.ndarray
+            time
+        theta : jnp.ndarray
+            parameters of the model
+            
+        Returns
+        -------
+        Betatilde_fun(t)
+        """
+        
+        return jnp.zeros(self.dim[0]*self.dim[1])
+    
+    def __tv_Btilde(self, t:jnp.ndarray, theta:jnp.ndarray=None)->jnp.ndarray:
+        
+        """Returns Btilde_fun(t) for the auxiallary process for the tv-model
+
+        Parameters
+        ----------
+        t : jnp.ndarray
+            time
+        theta : jnp.ndarray
+            parameters of the model
+            
+        Returns
+        -------
+        Btilde_fun(t)
+        """
+        
+        K = jnp.apply_along_axis(self.__k_qTi, -1, self.qT, theta).\
+            reshape(-1,self.dim[0]*self.dim[1]//2)
+        
+        K = jnp.vstack((K, jnp.zeros_like(K)))
+        zero = jnp.zeros_like(K)
+                        
+        return jnp.hstack((zero, K))
+    
+    def __tv_sigmatilde_fun(self, t:jnp.ndarray, theta:jnp.ndarray=None)->jnp.ndarray:
+        
+        """Computes sigmatilde_fun of tv-model [0, jnp.eye(gamma)]
+
+        Parameters
+        ----------
+        t : jnp.ndarray
+            time
+        theta : jnp.ndarray
+            Parameters of the kernel
+            
+        Returns
+        -------
+        jnp.ndarray: [0, jnp.eye(gamma)]
+        """
+        
+        val = jnp.diag(self.gamma)
+        zero = jnp.zeros_like(val)
+        
+        return jnp.vstack((zero, val))
+    
+    def get_tv_approx_model(self, gamma:jnp.ndarray, dim:List[int],
+                            qT:jnp.ndarray
+                            )->Tuple[Callable, Callable, Callable]:
+        
+        """Returns the diffusion and drift term in the auxilliary tv-model
+
+        Parameters
+        ----------
+        gamma : jnp.ndarray
+            coefficients
+        qT : jnp.ndarray
+            landmarks at time T
+        lambda_ : float
+            Multiplicative term in the ms-model drift
+            
+        Returns
+        -------
+        Tuple of callables:
+            -betatilde in the auxilliary ms-model
+            -Btilde in the auxilliary ms-model
+            -sigmatilde in the auxilliary ms-model
+        """
+        
+        self.gamma = jnp.repeat(gamma,dim[1], axis=0)
+        self.dim = dim
+        self.qT = qT
+        
+        return self.__tv_betatilde, self.__tv_Btilde, self.__tv_sigmatilde_fun
+    
     def __ms_b_fun(self, t:jnp.ndarray, x:jnp.ndarray,
                    theta:jnp.ndarray=None)->jnp.ndarray:
         
@@ -279,6 +371,8 @@ class landmark_models(object):
         -------
         jnp.ndarray: [dq/dt, dp/dt] = [dH/dp, -lambda*dH/dp-dH/dq] 
         """
+        
+        #print(x.shape)
         
         x = x.reshape(self.dim)
         q = x[0:self.d]
@@ -494,17 +588,16 @@ class landmark_models(object):
         T = time_grid[-1]
         
         self.dim = dim
-        self.N = dim[-1]//2
+        self.N = dim[0]//2
         
         sol = solve_ivp(rhs_fun, t_span=[t0, T], y0=x0, 
                         method='RK45', t_eval=time_grid, args=theta)
         
         y = sol.y
         y = y.reshape(self.dim+[-1])
+        y = y.transpose(2,0,1)
         qt = y[:,0:self.N]
         pt = y[:,self.N:]
-        
-        print(sol.message)
                 
         return sol.t, qt, pt
     
@@ -540,33 +633,38 @@ class landmark_models(object):
             -Momentums pt
         """
         
-        self.q0 = q0.reshape(-1)
-        self.qT = qT.reshape(-1)
-        self.time_grid = time_grid
-        self.time_diff = jnp.diff(time_grid, axis=0)
-        self.n_steps = len(time_grid)
-        self.N = len(self.qT)
-        self.rhs_fun = lambda t,x : rhs_fun(t,x,theta)
-        self.theta = theta
-                
+        q = q0.reshape(-1)
+        qT = qT.reshape(-1)
+        time_diff = jnp.diff(time_grid, axis=0)
+        n_steps = len(time_grid)
+        N = len(q0)
+                        
         if p0 is None:
             p0 = jnp.zeros_like(q0)
         
+        x0 = jnp.hstack((q, p0.reshape(-1))).reshape(-1)
+        
         grad_e = grad(self.__landmark_matching_error)
             
-        sol = minimize(self.__landmark_matching_error, p0, jac=grad_e,
-                 method='BFGS', options={'gtol': 1e-05, 'maxiter':100, 'disp':True})
-        
-        print(sol.message)
+        sol = minimize(self.__landmark_matching_error, p0.reshape(-1), jac=grad_e,
+                 method='BFGS', options={'gtol': 1e-05, 'maxiter':100, 'disp':True},
+                 args=(q, qT, rhs_fun, n_steps, time_grid, time_diff, N, theta))
         
         p0 = sol.x.reshape(q0.shape)
-    
-        x0 = jnp.hstack((q0, p0))
+        x0 = jnp.vstack((q0, p0))
+        
         t, qt, pt = self.landmark_shooting_ivp_rk45(x0, rhs_fun, time_grid, theta)
                 
         return t, qt, pt
         
-    def __landmark_matching_error(self, p0:jnp.ndarray)->jnp.ndarray:
+    def __landmark_matching_error(self, p0:jnp.ndarray, q0:jnp.ndarray,
+                                  qT:jnp.ndarray,
+                                  rhs_fun:Callable[[jnp.ndarray, jnp.ndarray, jnp.ndarray], jnp.ndarray],
+                                  n_steps:int,
+                                  time_grid:jnp.ndarray,
+                                  time_diff:jnp.ndarray,
+                                  N:int,
+                                  theta:jnp.ndarray)->jnp.ndarray:
         
         """Computes sum (qThat-qT)**2
         
@@ -574,16 +672,32 @@ class landmark_models(object):
         ----------
         p0 : jnp.ndarray
             momentum at time 0
+        q0 : jnp.ndarray
+            landmark at time 0
+        qT : jnp.ndarray
+            landmark at time T
+        rhs_fun : Callable[[jnp.ndarray, jnp.ndarray, jnp.ndarray], jnp.ndarray]
+            right hand side [dq/dt, dp/dt]
+        n_steps : int
+            length of time grid
+        time_grid : jnp.ndarray
+            time grid
+        time_diff : jnp.ndarray
+            differences in time grid
+        N : int
+            total dimension of landmarks, i.e. n*d
+        theta : jnp.ndarray
+            parameters in the model
             
         Returns
         -------
         sum (qThat-qT)**2
         """
                 
-        x0 = jnp.hstack((self.q0, p0))
-        for i in range(0,self.n_steps-1):
-            x0 += self.rhs_fun(self.time_grid[i+1], x0)*self.time_diff[i]
+        x0 = jnp.hstack((q0, p0)).reshape(-1)
+        for i in range(0,n_steps-1):
+            x0 += rhs_fun(time_grid[i+1], x0,theta)*time_diff[i]
             
-        qThat = x0[:, 0:self.N]
+        qThat = x0[0:N]
                             
-        return jnp.sum((qThat-self.qT)**2, axis=0)
+        return jnp.sum((qThat-qT)**2, axis=0)

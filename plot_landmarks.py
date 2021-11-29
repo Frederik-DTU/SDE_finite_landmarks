@@ -25,7 +25,8 @@ class plot_landmarks(object):
         
     def plot_1d_landmarks_ivp(self, t:jnp.ndarray, 
                               qt:jnp.ndarray, 
-                              pt:jnp.ndarray)->None:
+                              pt:jnp.ndarray,
+                              title:str='Landmark Shooting')->None:
         
         qt = qt.reshape(qt.shape[0:2])
         pt = pt.reshape(pt.shape[0:2])
@@ -51,12 +52,14 @@ class plot_landmarks(object):
         ax[1].legend()
             
         plt.tight_layout()
+        plt.suptitle(title)
         
         return
     
     def plot_1d_landmarks_bvp(self, t:jnp.ndarray, 
                               qt:jnp.ndarray, 
-                              pt:jnp.ndarray)->None:
+                              pt:jnp.ndarray,
+                              title:str='Exact Matching MS')->None:
         
         qt = qt.reshape(qt.shape[0:2])
         pt = pt.reshape(pt.shape[0:2])
@@ -82,12 +85,14 @@ class plot_landmarks(object):
         ax[1].legend()
             
         plt.tight_layout()
+        plt.suptitle(title)
         
         return
     
     def plot_1d_landmarks_realisations(self, t:jnp.ndarray, 
                               qt:jnp.ndarray, 
-                              pt:jnp.ndarray)->None:
+                              pt:jnp.ndarray,
+                              title:str='MS-Model')->None:
         
         N = qt.shape[-1]
         fig, ax = plt.subplots(N, 2, figsize = self.figsize, sharex = True)
@@ -112,5 +117,6 @@ class plot_landmarks(object):
             ax[i,1].legend()
             
         plt.tight_layout()
+        plt.suptitle(title)
         
         return
