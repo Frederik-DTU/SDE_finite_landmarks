@@ -14,11 +14,11 @@
 #Load the following in case
 module swap python3/3.8.2
 
-python3 1d_landmarks_ms.py \
+python3 1d_ms_model.py \
     --save_path 1d_saved/ \
     --eta 0.98 \
     --delta 0.01 \
-    --lambda_ 1.0 \
+    --lmbda 1.0 \
     --epsilon 0.001 \
     --time_step 0.001 \
     --t0 0.0 \
