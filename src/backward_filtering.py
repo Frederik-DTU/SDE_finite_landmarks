@@ -346,7 +346,7 @@ def hfc(beta_fun, B_fun, a_fun, P_n, L_list, Sigma_list, v_list, t_points, grid_
     
     return Ht_list[::-1], Ft_list[::-1], ct_list[::-1]
     
-def pnu_step(beta, B, a, PT_, nuT_, LT, SigmaT, vt, time_grid, method='odeint'):
+def pnu_step(beta, B, a, PT, nuT, time_grid, method='odeint'):
     
     def euler_method():
         
@@ -383,14 +383,15 @@ def pnu_step(beta, B, a, PT_, nuT_, LT, SigmaT, vt, time_grid, method='odeint'):
         dt_reverse = jnp.diff(time_grid[::-1])
         
         n = jnp.arange(len(dt_reverse))
-        _, y = lax.scan(euler_step, init=(PT_,nuT_), xs=n)
+        _, y = lax.scan(euler_step, init=(PT,nuT), xs=n)
         
         Pt, nut = y
-        Pt = jnp.concatenate((PT_[jnp.newaxis,...],Pt), axis=0)[::-1]
-        nut = jnp.concatenate((nuT_[jnp.newaxis,...],nut), axis=0)[::-1]
+        Pt = Pt[::-1]
+        nut = nut[::-1]
         Ht = jnp.linalg.inv(Pt)
+        Ft = jnp.einsum('ikj,ij->ik', Ht, nut)
         
-        return Pt, nut, Ht
+        return Pt, nut, Ht, Ft
     
     def odeint_method():
     
@@ -412,15 +413,8 @@ def pnu_step(beta, B, a, PT_, nuT_, LT, SigmaT, vt, time_grid, method='odeint'):
         
         grid_reverse = time_grid[::-1]
         
-        PT_dim = list(PT_.shape)
+        PT_dim = list(PT.shape)
         PT_dim_flatten = math.prod(PT_dim)
-    
-        LT_trans = LT.T
-        SigmaT_inv = jnp.linalg.inv(SigmaT)
-        PT_inv_term = jnp.linalg.inv(SigmaT+LT.dot(PT_).dot(LT_trans))
-        PT__inv = jnp.linalg.inv(PT_)
-        PT = PT_-PT_.dot(LT_trans).dot(PT_inv_term).dot(LT).dot(PT_)
-        nuT = PT.dot(LT_trans.dot(SigmaT_inv).dot(vt)+PT__inv.dot(nuT_))
             
         yT = jnp.hstack((PT.reshape(-1), nuT))
                 
@@ -431,13 +425,9 @@ def pnu_step(beta, B, a, PT_, nuT_, LT, SigmaT, vt, time_grid, method='odeint'):
         Pt = y[:,0:PT_dim_flatten].reshape([-1]+PT_dim)
         nut = y[:,PT_dim_flatten:]
         Ht = jnp.linalg.inv(Pt)
+        Ft = jnp.einsum('ikj,ij->ik', Ht, nut)
         
-        return Pt, nut, Ht
-        
-    if len(LT.shape)==1:
-        LT = LT.reshape(1,-1)
-    if len(SigmaT.shape)==1:
-        SigmaT = SigmaT.reshape(1,1)
+        return Pt, nut, Ht, Ft
         
     if method=='odeint':
         return odeint_method() #Pt, nut, Ht
@@ -462,10 +452,12 @@ def pnu(beta_fun, B_fun, a_fun, P_n, L_list, Sigma_list, v_list, t_points, grid_
     
     n_steps = len(L_list)
     n_states = len(P_n)
+    vT_ = jnp.zeros(n_states)
+    v_list_new = v_list[:].append(vT_)
     
     LT = L_list[-1]
     SigmaT = Sigma_list[-1]
-    vT = v_list[-1]
+    vT = jnp.hstack(v_list_new[-2:])
     
     nuT = jnp.zeros(n_states)
     LT_trans = LT.T
@@ -474,7 +466,7 @@ def pnu(beta_fun, B_fun, a_fun, P_n, L_list, Sigma_list, v_list, t_points, grid_
     Pn_inv = jnp.linalg.inv(P_n)
     
     PT = P_n-P_n.dot(LT_trans).dot(PT_inv_term).dot(LT).dot(P_n)
-    nuT = PT.dot(LT_trans.dot(SigmaT_inv).dot(vt)+Pn_inv.dot(nuT))
+    nuT = PT.dot(LT_trans.dot(SigmaT_inv).dot(vT)+Pn_inv.dot(nuT))
 
     Pt_list = []
     nut_list = []
@@ -485,7 +477,8 @@ def pnu(beta_fun, B_fun, a_fun, P_n, L_list, Sigma_list, v_list, t_points, grid_
         t0 = t_points[idx]
         time_grid = grid_fun(t0, t1)
         
-        Pt, nut, Ht = pnu_step(beta_fun, B_fun, a_fun, PT, nuT, LT, SigmaT, vt, time_grid, method)
+        Pt, nut, Ht = pnu_step(beta_fun, B_fun, a_fun, PT, nuT, LT, SigmaT, vt, 
+                               time_grid, method)
         
         Pt_list.append(Pt)
         nut_list.append(nut)
