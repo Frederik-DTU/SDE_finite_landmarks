@@ -12,7 +12,7 @@ Created on Sun Sep 19 17:26:30 2021
 
 #JAX Modules
 import jax.numpy as jnp
-from jax import random, grad
+from jax import random, grad, lax
 
 #From scipy
 from scipy.integrate import odeint
@@ -20,6 +20,7 @@ from scipy.stats import multivariate_normal
 
 #Time modules
 import datetime
+import time #For timing the code, should be removed
 
 #From math
 import math
@@ -184,6 +185,7 @@ class sde_finite_landmarks(object):
         Density at x as jnp.ndarray
         """
         
+        x = x.reshape(-1)
         k = len(x)
         if mean is None:
             mean = jnp.zeros(k)
@@ -255,6 +257,60 @@ class sde_finite_landmarks(object):
         self.key += 1
         
         return grid, sim.squeeze()
+    
+    def __sim_sde_fast(self, x0:jnp.ndarray, 
+                f:Callable[[jnp.ndarray, jnp.ndarray], jnp.ndarray],
+                g:Callable[[jnp.ndarray, jnp.ndarray], jnp.ndarray],
+                Wt:jnp.ndarray,
+                theta:jnp.ndarray = None, #Parameters of the model
+                grid:jnp.ndarray=jnp.linspace(0, 1, 100)
+                )->Tuple[jnp.ndarray, jnp.ndarray]:
+        
+        """Simulates n_sim realisations of an SDE on an uniform grid using
+        the Euler-Marayama method
+
+        Parameters
+        ----------
+        x0 : jnp.ndarray
+            The start point
+        f : Callable[[jnp.ndarray, jnp.ndarray], jnp.ndarray]
+            The drift term given by f(t,Xt,theta)
+        g : Callable[[jnp.ndarray, jnp.ndarray], jnp.ndarray]
+            The diffusion term given by g(t,Xt,theta)
+        Wt : jnp.ndarray, optional
+            Wiener process of appropiate dimension
+        n_sim : int, optional
+            number of realisations
+        grid : jnp.ndarray, optional
+            time grid with grid[0]=t0 and grid[-1]=T of length n_steps
+            
+        Returns
+        -------
+        tuple of
+        -the time grid, t
+        -The squeezed Ito process, Xt
+        """
+        
+        n_steps = len(grid)
+        sim = jnp.zeros([n_steps]+list(x0.shape))
+        
+        dWt = jnp.diff(Wt, axis=0).reshape(n_steps-1,-1)
+        
+        sim = sim.at[0].set(x0)
+        for j in range(1,n_steps):
+            t_up = grid[j]
+            dt = grid[j]-grid[j-1]
+            sim = sim.at[j].set(sim[j-1]+
+                                    f(t_up, sim[j-1], theta)*dt+
+                                       jnp.dot(g(t_up, sim[j-1], theta),dWt[j-1]))
+        
+        #lax_fun = lambda carry, t: carry
+            
+        #print(lax_fun(x0,grid[1]))
+        
+        #final, result = lax.scan(lax_fun, init=0.0, xs=grid[1:])
+        
+        return sim.squeeze()
     
     def ito_integral(self, Xt:jnp.ndarray,
                      n_sim_int:int = 10,
@@ -613,11 +669,12 @@ class sde_finite_landmarks(object):
         
         Wt_circ = self.eta*Wt+self.sqrt_eta*Zt
         
-        _, Xt_circ = self.sim_sde(x0, self.f_fun, self.sigma_fun, Wt = Wt_circ, 
+        Xt_circ = self.__sim_sde_fast(x0, self.f_fun, self.sigma_fun, Wt = Wt_circ, 
                                   theta=theta, 
                                   grid=self.time_grid)
-        
+
         psi_Xtcirc = self.__compute_logpsi(Xt_circ, self.Ht, self.Ft, theta)
+        
         A = jnp.exp(psi_Xtcirc-self.psi_Xt)
                 
         if U<A:
@@ -764,9 +821,8 @@ class sde_finite_landmarks(object):
         
         logpsi_Xt = self.__compute_logpsi(Xt, self.Ht, self.Ft, theta)
         
-        return logpsi_Xt+ \
-            jnp.log(self.__compute_rhox0(x0,self.mut[0], self.Mt[0], self.Lt[0]))
-        
+        return logpsi_Xt + \
+            jnp.log(self.__compute_rhox0(x0,self.mut[0], self.Mt[0], self.Lt[0]))      
         
     def __compute_logpsi(self, Xt:jnp.ndarray,
                     Ht:jnp.ndarray,
@@ -791,7 +847,7 @@ class sde_finite_landmarks(object):
         -------
         log Psi(X^{\circ}) as jnp.ndarray
         """
-                
+        
         sigma = jnp.zeros((self.n_steps, 2*self.dn, self.dim_brown))
         for i in range(self.n_steps):
             sigma = sigma.at[i].set(self.sigma_fun(self.time_grid[i], Xt[i], theta))
@@ -811,7 +867,56 @@ class sde_finite_landmarks(object):
         val2 = jnp.matmul(a_mat-self.atilde_mat, val)
         
         Gx = val1-1/2*jnp.trace(val2,axis1=1, axis2=2)
+                                
+        return self.ri_trapez(Gx,self.time_grid)
+        
+    
+    def __compute_logpsi2(self, Xt:jnp.ndarray,
+                    Ht:jnp.ndarray,
+                    Ft:jnp.ndarray,
+                    theta:jnp.ndarray,
+                    )->jnp.ndarray:
+        
+        """log Psi(X^{\circ})
+
+        Parameters
+        ----------
+        Xt : jnp.ndarray
+           Guided proposal
+        Ht : jnp.ndarray
+            Negative Hessian of grad_x log rho_tilde(s,x)
+        Ft : jnp.ndarray
+            Matrix to compute rtilde
+        theta : jnp.ndarray
+            Parameters of the model
+            
+        Returns
+        -------
+        log Psi(X^{\circ}) as jnp.ndarray
+        """
+        
+        sigma = jnp.zeros((self.n_steps, 2*self.dn, self.dim_brown))
+        for i in range(self.n_steps):
+            sigma = sigma.at[i].set(self.sigma_fun(self.time_grid[i], Xt[i], theta))
+            
+        b = jnp.zeros((self.n_steps, 2*self.dn))
+        for i in range(self.n_steps):
+            b = b.at[i].set(self.b_fun(self.time_grid[i], Xt[i], theta))
+        
+        a_mat = jnp.matmul(sigma, sigma.transpose(0,2,1))
+        
+        btilde = self.betatilde_mat+jnp.einsum('ijn,in->ij', self.Btilde_mat, Xt)
+        rtilde = self.__compute_rtildemat(Xt, Ht, Ft)[...,jnp.newaxis]
                 
+        val = Ht-jnp.matmul(rtilde, rtilde.transpose(0,2,1))
+        
+        val1 = jnp.einsum('ij,ij->i', b-btilde, rtilde.squeeze())
+        val2 = jnp.matmul(a_mat-self.atilde_mat, val)
+        
+        Gx = val1-1/2*jnp.trace(val2,axis1=1, axis2=2)
+        
+        print(jnp.linalg.norm(Gx))
+                        
         return self.ri_trapez(Gx,self.time_grid)
     
     def __solve_backward(self, theta:jnp.ndarray
@@ -1027,10 +1132,9 @@ class sde_finite_landmarks(object):
         jnp.ndarray: phi(v; mut+Lt*xt, Mt)
         """
         
-        vt = jnp.einsum('jk,k->j', Lt, xt)
-        mean = mut+vt
+        mean = mut+jnp.einsum('jk,k->j', Lt, xt)
                 
-        return multivariate_normal.pdf(vt, mean=mean, cov=Mt)
+        return multivariate_normal.pdf(self.vT, mean=mean, cov=Mt)
     
     def __compute_rhox0(self, x0:jnp.ndarray,
                         mu0:jnp.ndarray,
@@ -1056,10 +1160,13 @@ class sde_finite_landmarks(object):
         jnp.ndarray: phi(v; mut+Lt*xt, Mt)
         """
         
-        v = jnp.einsum('jk,k->j', L0, x0)
-        mean = mu0+v
+        mean = mu0+jnp.einsum('jk,k->j', L0, x0)
         
-        return self.multi_normal_pdf(v, mean=mean, cov=M0)
+        return self.multi_normal_pdf(self.vT, mean=mean, cov=M0)
+
+    
+
+
 
 
 

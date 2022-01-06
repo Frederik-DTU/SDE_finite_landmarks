@@ -555,6 +555,64 @@ class landmark_models(object):
         
         return self.__ms_betatilde, self.__ms_Btilde, self.__ms_sigmatilde_fun
     
+    def __ahs_b_fun(self, t:jnp.ndarray, x:jnp.ndarray,
+                   theta:jnp.ndarray=None)->jnp.ndarray:
+        
+        """Computes drift of ahs-model [dq/dt, dp/dt] = [dH/dp, -lambda*dH/dp-dH/dq] 
+
+        Parameters
+        ----------
+        t : jnp.ndarray
+            time
+        x : jnp.ndarray
+            states
+        theta : jnp.ndarray
+            Parameters of the kernel
+            
+        Returns
+        -------
+        jnp.ndarray: [dq/dt, dp/dt] = [dH/dp, -lambda*dH/dp-dH/dq] 
+        """
+        
+        #NOT FINISHED
+        
+        x = x.reshape(self.dim)
+        q = x[0:self.d]
+        p = x[self.d:]
+                        
+        self.q = q
+        self.p = p
+        dq = self.__dH_dp(theta).reshape(-1)
+        dp = -(self.lambda_*dq+(self.__dH_dq(theta)).reshape(-1))
+                
+        return jnp.hstack((dq, dp))
+    
+    def __ahs_sigma_fun(self, t:jnp.ndarray, x:jnp.ndarray,
+                       theta:jnp.ndarray=None)->jnp.ndarray:
+        
+        """Computes diffusion of ahs-model [0, jnp.eye(gamma)]
+
+        Parameters
+        ----------
+        t : jnp.ndarray
+            time
+        x : jnp.ndarray
+            states
+        theta : jnp.ndarray
+            Parameters of the kernel
+            
+        Returns
+        -------
+        jnp.ndarray: [0, jnp.eye(gamma)]
+        """
+        
+        #NOT FINISHED
+        
+        val = jnp.diag(self.gamma)
+        zero = jnp.zeros_like(val)
+                
+        return jnp.vstack((zero, val))
+    
     def landmark_shooting_ivp_rk45(self, x0:jnp.ndarray,
                                    rhs_fun:Callable[[jnp.ndarray, jnp.ndarray, jnp.ndarray], jnp.ndarray],
                                    time_grid:jnp.ndarray,

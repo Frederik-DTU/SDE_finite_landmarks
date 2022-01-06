@@ -71,13 +71,13 @@ def parse_args():
                         type=str)
     
     #Hyper-parameters
-    parser.add_argument('--eta', default=0.1,  #0.1
+    parser.add_argument('--eta', default=0.98,  #0.1
                         type=float)
-    parser.add_argument('--delta', default=0.1, #0.1 
+    parser.add_argument('--delta', default=0.01, #0.1 
                         type=float)
     parser.add_argument('--lambda_', default=1.0, 
                         type=float)
-    parser.add_argument('--epsilon', default=0.001,
+    parser.add_argument('--epsilon', default=1,#0.001,
                         type=float)
     parser.add_argument('--time_step', default=0.01, #0.001,
                         type=float)
