@@ -180,7 +180,7 @@ def lmmu(beta_fun, B_fun, a_fun, P_n, L_list, Sigma_list, v_list, t, grid_fun, m
     
     return Lt_list[::-1], Mt_list[::-1], mut_list[::-1], Ft_list[::-1], Ht_list[::-1]
     
-def hfc_step(beta, B, a, HT, FT, cT, vt, time_grid, method='odeint'):
+def hfc_step(beta, B, a, HT, FT, cT, time_grid, method='odeint'):
     
     def euler_method():
         
@@ -233,9 +233,9 @@ def hfc_step(beta, B, a, HT, FT, cT, vt, time_grid, method='odeint'):
         
         _, ct = inter.integrator(dct[::-1], grid_reverse, method='trapez')
         
-        ct = cT+ct[::-1]
+        ct0 = cT+ct[-1]
         
-        return Ht, Ft, ct
+        return Ht, Ft, ct0
     
     def odeint_method():
     
@@ -272,9 +272,9 @@ def hfc_step(beta, B, a, HT, FT, cT, vt, time_grid, method='odeint'):
         
         Ht = y[:,0:HT_dim_flatten].reshape([-1]+HT_dim)
         Ft = y[:,HT_dim_flatten:-1]
-        ct = y[:,-1]
+        ct0 = y[0,-1]
         
-        return Ht, Ft, ct
+        return Ht, Ft, ct0
         
     if method=='odeint':
         return odeint_method() #Ht, Ft, ct
@@ -304,13 +304,13 @@ def hfc(beta_fun, B_fun, a_fun, P_n, L_list, Sigma_list, v_list, t_points, grid_
     SigmaT_inv = jnp.linalg.inv(SigmaT)
     logSigmaT_det = jnp.linalg.det(SigmaT)
     LTSigmaT = LT.T.dot(SigmaT_inv)
-    vT = v_list[-1]
-    kT = len(vT)
+    vt = v_list[-1]
+    kt = len(vt)
     
     HT = P_n_inv + LTSigmaT.dot(LT)
-    FT = jnp.zeros(n_states)+LTSigmaT.dot(vT)
+    FT = jnp.zeros(n_states)+LTSigmaT.dot(vt)
     cT = -1/2*(n_states*jnp.log(2*jnp.pi)+jnp.log(jnp.linalg.det(P_n)))+\
-        1/2*vT.T.dot(SigmaT_inv).dot(vT)+1/2*(kT*jnp.log(2*jnp.pi)+logSigmaT_det)
+        1/2*vt.T.dot(SigmaT_inv).dot(vt)+1/2*(kt*jnp.log(2*jnp.pi)+logSigmaT_det)
 
     Ht_list = []
     Ft_list = []
@@ -321,24 +321,24 @@ def hfc(beta_fun, B_fun, a_fun, P_n, L_list, Sigma_list, v_list, t_points, grid_
         t0 = t_points[idx]
         time_grid = grid_fun(t0, t1)
         
-        Ht, Ft, ct = hfc_step(beta_fun, B_fun, a_fun, HT, FT, cT, vt, 
+        Ht, Ft, ct0 = hfc_step(beta_fun, B_fun, a_fun, HT, FT, cT, 
                               time_grid, method)
         Ht_list.append(Ht)
         Ft_list.append(Ft)
-        ct_list.append(ct)
+        ct_list.append(ct0)
         
         Li = L_list[idx]
         Sigmai = Sigma_list[idx]
-        vi = v_list[idx]
+        vt = v_list[idx]
         
         Sigmai_inv = jnp.linalg.inv(Sigmai)
         logSigmai_det = jnp.log(jnp.linalg.inv(Sigmai))
         LiSigmai = Li.T.dot(Sigmai_inv)
-        k = len(vi)
+        k = len(vt)
         
         HT = Ht[0]+LiSigmai.dot(Li)
-        FT = Ft[0]+LiSigmai.dot(vi)
-        cT = ct[0]+1/2*vi.T.dot(Sigmai_inv).dot(vi)+1/2*(k*jnp.log(2*jnp.pi)+logSigmai_det)
+        FT = Ft[0]+LiSigmai.dot(vt)
+        cT = ct0+1/2*vt.T.dot(Sigmai_inv).dot(vt)+1/2*(k*jnp.log(2*jnp.pi)+logSigmai_det)
     
     Ht_list.append(HT)
     Ft_list.append(FT)
@@ -386,8 +386,8 @@ def pnu_step(beta, B, a, PT, nuT, time_grid, method='odeint'):
         _, y = lax.scan(euler_step, init=(PT,nuT), xs=n)
         
         Pt, nut = y
-        Pt = Pt[::-1]
-        nut = nut[::-1]
+        Pt = jnp.concatenate((PT[jnp.newaxis,...],Pt), axis=0)[::-1]
+        nut = jnp.concatenate((nuT [jnp.newaxis,...],nut), axis=0)[::-1]
         Ht = jnp.linalg.inv(Pt)
         Ft = jnp.einsum('ikj,ij->ik', Ht, nut)
         
@@ -436,28 +436,12 @@ def pnu_step(beta, B, a, PT, nuT, time_grid, method='odeint'):
     
 def pnu(beta_fun, B_fun, a_fun, P_n, L_list, Sigma_list, v_list, t_points, grid_fun, method='odeint'):
     
-    global HT, FT, cT, vT
-    
-    def compute_Ht(Lt, Mt_inv):
-        
-        val = jnp.einsum('jn,nk->jk', Lt.T, Mt_inv)
-        
-        return jnp.einsum('jn,nk->jk', val, Lt)
-    
-    def compute_Ft(Lt, Mt_inv, vt, mut):
-
-        val = jnp.einsum('jn,nk->jk', Lt.T, Mt_inv)
-        
-        return jnp.einsum('nj,j->n', val, vt-mut)
-    
     n_steps = len(L_list)
     n_states = len(P_n)
-    vT_ = jnp.zeros(n_states)
-    v_list_new = v_list[:].append(vT_)
     
     LT = L_list[-1]
     SigmaT = Sigma_list[-1]
-    vT = jnp.hstack(v_list_new[-2:])
+    vt = v_list[-1]
     
     nuT = jnp.zeros(n_states)
     LT_trans = LT.T
@@ -466,27 +450,28 @@ def pnu(beta_fun, B_fun, a_fun, P_n, L_list, Sigma_list, v_list, t_points, grid_
     Pn_inv = jnp.linalg.inv(P_n)
     
     PT = P_n-P_n.dot(LT_trans).dot(PT_inv_term).dot(LT).dot(P_n)
-    nuT = PT.dot(LT_trans.dot(SigmaT_inv).dot(vT)+Pn_inv.dot(nuT))
-
+    nuT = PT.dot(LT_trans.dot(SigmaT_inv).dot(vt)+Pn_inv.dot(nuT))
+    
     Pt_list = []
     nut_list = []
     Ht_list = []
+    Ft_list = []
     for idx in range(n_steps-1, 0, -1):
         
         t1 = t_points[idx+1]
         t0 = t_points[idx]
         time_grid = grid_fun(t0, t1)
         
-        Pt, nut, Ht = pnu_step(beta_fun, B_fun, a_fun, PT, nuT, LT, SigmaT, vt, 
-                               time_grid, method)
+        Pt, nut, Ht, Ft = pnu_step(beta_fun, B_fun, a_fun, PT, nuT, time_grid, method)
         
         Pt_list.append(Pt)
         nut_list.append(nut)
         Ht_list.append(Ht)
+        Ft_list.append(Ft)
         
         Li = L_list[-1]
         Sigmai = Sigma_list[-1]
-        vi = v_list[-1]
+        vt = v_list[idx]
         
         Li_trans = Li.T
         Sigmai_inv = jnp.linalg.inv(Sigmai)
@@ -494,12 +479,13 @@ def pnu(beta_fun, B_fun, a_fun, P_n, L_list, Sigma_list, v_list, t_points, grid_
         Pi_inv = jnp.linalg.inv(Pt[0])
         
         PT = Pt[0]-Pt[0].dot(LT_trans).dot(Pi_inv_term).dot(Li).dot(Pt[0])
-        nuT = PT.dot(Li_trans.dot(Sigmai_inv).dot(vi)+Pi_inv.dot(nut[0]))
+        nuT = PT.dot(Li_trans.dot(Sigmai_inv).dot(vt)+Pi_inv.dot(nut[0]))
     
     Pt_list.append(PT)
     nut_list.append(nuT)
     Ht_list.append(jnp.linalg.inv(PT))
+    Ft_list.append(jnp.einsum('kj,j->k', jnp.linalg.inv(PT), nuT))
     
-    return Pt_list[::-1], nut_list[::-1], Ht_list[::-1]
+    return Pt_list[::-1], nut_list[::-1], Ht_list[::-1], Ft_list[::-1]
     
     

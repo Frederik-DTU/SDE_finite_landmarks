@@ -71,7 +71,7 @@ print(t1-t0)
 
 
 t0 = time.time()
-Pt10, nut10, Ht10 = bf.pnu(beta_fun, B_fun, a_fun, P_n, L_list, Sigma_list, v_list, t_points, grid_fun, method='odeint')
+Pt10, nut10, Ht10, Ft10 = bf.pnu(beta_fun, B_fun, a_fun, P_n, L_list, Sigma_list, v_list, t_points, grid_fun, method='odeint')
 t1 = time.time()
 print(t1-t0)
 
@@ -79,19 +79,19 @@ HT_ = jnp.eye(2)
 FT_ = jnp.ones(2)
 cT_ = jnp.array([0.0])
 t0 = time.time()
-Ht, Ft, ct = bf.hfc_step(beta_fun, B_fun, a_fun, HT_, FT_, cT_, vt, 
+Ht, Ft, ct = bf.hfc_step(beta_fun, B_fun, a_fun, HT_, FT_, cT_, 
                                time_grid, method='odeint')
 t1 = time.time()
 print(t1-t0)
 
-Ht2, Ft2, ct2 = bf.hfc_step(beta_fun, B_fun, a_fun, HT_, FT_, cT_, vt, 
+Ht2, Ft2, ct2 = bf.hfc_step(beta_fun, B_fun, a_fun, HT_, FT_, cT_, 
                                time_grid, method='euler')
 
 PT_ = jnp.eye(2)
 nuT_ = jnp.ones(2)
 t0 = time.time()
-Pt, nut, Ht = bf.pnu_step(beta_fun, B_fun, a_fun, PT_, nuT_, LT, SigmaT, vt, time_grid, method='odeint')
+Pt, nut, Ht, Ft = bf.pnu_step(beta_fun, B_fun, a_fun, PT_, nuT_, time_grid, method='odeint')
 t1 = time.time()
 print(t1-t0)
 
-Pt2, nut2, Ht2 = bf.pnu_step(beta_fun, B_fun, a_fun, PT_, nuT_, LT, SigmaT, vt, time_grid, method='euler')
+Pt2, nut2, Ht2, Ft = bf.pnu_step(beta_fun, B_fun, a_fun, PT_, nuT_, time_grid, method='euler')

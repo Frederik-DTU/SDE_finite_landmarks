@@ -68,7 +68,7 @@ class plot_landmarks(object):
         
         t0 = jnp.ones_like(qt[0])*t[0]
         T = jnp.ones_like(qt[0])*t[-1]
-        
+
         ax[0].plot(t, qt[:,0], color='blue', label='q(t)')
         ax[0].plot(t, qt[:,1:], color='blue')
         ax[0].scatter(x=T, y=qt[-1], marker='o', s=40, color='navy', label='qT')
