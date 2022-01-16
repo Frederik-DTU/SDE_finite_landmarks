@@ -71,7 +71,19 @@ def sim_multinormal(mu:jnp.ndarray=jnp.zeros(2), cov:jnp.ndarray=jnp.eye(2), dim
     
     return Z
 
-def sim_Wt(grid, dim:int=1):
+def sim_normal(mu=0.0, sigma=1.0, simulations=1):
+    
+    global key
+    
+    keys = random.split(key,num=seed_step+1)
+    key = keys[0]
+    subkeys = keys[1:]
+    
+    Z = mu+sigma*random.normal(subkeys[0], shape=[simulations])
+    
+    return Z
+
+def sim_Wt(grid, dim:int=1, simulations:int=1):
     
     global key
     keys = random.split(key,num=seed_step+1)
@@ -80,10 +92,10 @@ def sim_Wt(grid, dim:int=1):
     
     n_steps = len(grid)
     sqrtdt = jnp.sqrt(jnp.diff(grid, axis=0)).reshape(-1,1)
-    N = random.normal(subkeys[0],[n_steps-1, dim])
+    N = random.normal(subkeys[0],[simulations, n_steps-1, dim])
     
-    Wt = jnp.zeros([n_steps, dim])
-    Wt = Wt.at[1:].set(sqrtdt*N)
+    Wt = jnp.zeros([simulations, n_steps, dim])
+    Wt = Wt.at[:,1:].set(sqrtdt*N)
         
     return jnp.cumsum(Wt, axis=1).squeeze()
 
@@ -107,22 +119,20 @@ def sim_sde_euler(x0:jnp.ndarray,
                   grid,
                   args=()):
     
+    def sde_step(yi, ite):
+        
+        t, dt, dWt = ite
+        y = yi+b_fun(t, yi)*dt+jnp.dot(sigma_fun(t, yi),dWt)
+        
+        return y, y
+
     if args:
         b_fun = lambda t,x : b_fun(t,x, *args)
         sigma_fun = lambda t,x: sigma_fun(t,x,*args)
     
-    dt = jnp.diff(grid)
-    dWt = jnp.diff(Wt, axis=0)
-    
-    def sde_step(carry, idx):
-        
-        yi = carry
-        t = grid[idx+1]
-        y = yi+b_fun(t, yi)*dt[idx]+jnp.dot(sigma_fun(t, yi),dWt[idx])
-        
-        return y, y
+    diff_t = jnp.diff(grid)
+    dW = jnp.diff(Wt, axis=0)
 
-    xs = jnp.arange(len(dt))
-    _, y = lax.scan(sde_step, x0, xs=xs)
+    _, y = lax.scan(sde_step, x0, xs=(grid[:-1], diff_t, dW))
     
     return jnp.concatenate((x0.reshape(1,-1), y), axis=0)

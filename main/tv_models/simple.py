@@ -14,6 +14,7 @@ Created on Sun Nov 21 21:08:20 2021
 
 #JAX
 import jax.numpy as jnp
+from jax import vmap
 
 #From scipy
 from scipy.stats import multivariate_normal
@@ -23,61 +24,80 @@ import argparse
 
 #Own modules
 import diffusion_bridges as sde_dif
-import integration_ode as inter
-import landmark_models as lm
+import landmark_models2 as lm
+import sim_sp as sp
 
 #%% Functions
 
 #Kernel function
-def k(x:jnp.ndarray, theta:jnp.ndarray=None)->jnp.ndarray:
+def k(x:jnp.ndarray, y, theta:jnp.ndarray=None)->jnp.ndarray:
     
     theta = 1.0
     
-    return jnp.exp(-jnp.dot(x,x)/((2*theta)**2))
+    return jnp.exp(-jnp.dot(x-y,x-y)/(2*(theta**2)))
 
 #Kernel gradient
-def grad_k(x:jnp.ndarray, theta:jnp.ndarray=None)->jnp.ndarray:
+def grad_k(x:jnp.ndarray, y, theta:jnp.ndarray=None)->jnp.ndarray:
     
     theta = 1.0
     
-    return (theta**(-2))*k(x,theta)*x
+    return -(theta**(-2))*k(x,y,theta)*(x-y)
 
 #Kernel for prior
 def pi_kernel(x:jnp.ndarray)->jnp.ndarray:
     
     theta = 1.0
     
-    return jnp.exp(-jnp.dot(x,x)/((2*theta)**2))
+    return jnp.exp(-jnp.dot(x,x)/(2*(theta**2)))
 
 #Prior on landmarks
 def pi_prob(q0:jnp.ndarray, p0:jnp.ndarray)->jnp.ndarray:
     
+    def compute_row(qi):
+        
+        return vmap(pi_kernel)(q0-qi)
+    
     kmom = 100
     
-    Sigma = kmom/jnp.apply_along_axis(pi_kernel, -1, q0)
+    Sigma = kmom*jnp.linalg.inv(vmap(compute_row)(q0))
     mu = jnp.zeros_like(p0.reshape(-1))
-        
+    
     pi = multivariate_normal.pdf(p0.reshape(-1), mean=mu,
                                           cov = Sigma)
     
     return pi
+
+def q_sample(theta):
+    
+    sigma_theta = 1
+    theta_circ = jnp.exp(sp.sim_normal(mu=theta, sigma=sigma_theta))
+    
+    return theta_circ
+
+def q_prob(theta):
+    
+    if theta >= 0.1:
+        return 0.1*(theta**(-2))
+    else:
+        return 0
+    
 
 #%% Parse arguments
 
 def parse_args():
     parser = argparse.ArgumentParser()
     # File-paths
-    parser.add_argument('--save_path', default='Model_output/1d_landmarks', 
+    parser.add_argument('--save_path', default='1d_saved/', 
                         type=str)
     
     #Hyper-parameters
     parser.add_argument('--eta', default=0.98, #Should close to 1
                         type=float)
-    parser.add_argument('--delta', default=0.00001, #Should be low
+    parser.add_argument('--delta', default=0.001, #Should be low
                         type=float)
     parser.add_argument('--epsilon', default=0.001,#0.001,
                         type=float)
-    parser.add_argument('--time_step', default=0.001, #0.001,
+    parser.add_argument('--time_step', default=0.01, #0.001,
                         type=float)
     parser.add_argument('--t0', default=0.0, 
                         type=float)
@@ -85,16 +105,10 @@ def parse_args():
                         type=float)
     
     #Iteration parameters
-    parser.add_argument('--seed', default=2712, 
+    parser.add_argument('--max_iter', default=100, #20000, 
                         type=int)
-    parser.add_argument('--max_iter', default=1, #20000, 
+    parser.add_argument('--save_step', default=0, 
                         type=int)
-    parser.add_argument('--save_hours', default=1.0, 
-                        type=float)
-
-    #Continue training or not
-    parser.add_argument('--load_model_path', default='Model_output/1d_landmarks_ite_1000.npy',
-                        type=str)
 
 
     args = parser.parse_args()
@@ -106,6 +120,7 @@ def main():
     
     #Arguments
     args = parse_args()
+    
     n = 3
     d = 1
 
@@ -113,8 +128,7 @@ def main():
     time_grid = time_grid*(2-time_grid)
     
     q0 = jnp.array([-0.5, 0.0, 0.1])
-    p0 = jnp.ones(n)
-    qT = jnp.array([-0.25, 0.45, 0.60]) #jnp.array([-0.5, 0.2, 1.0])
+    qT = jnp.array([-0.5, 0.2, 1.0])
     vT = qT.reshape(-1)
     
     SigmaT = args.epsilon**2*jnp.eye(n)
@@ -129,36 +143,27 @@ def main():
     Btilde = Btilde_fun(0, None) #Since constant in time
     sigmatilde = sigmatilde_fun(0, None) #Since constant in time
     
-    betatilde_funfast = lambda t: betatilde #Since constant in time
-    Btilde_funfast = lambda t: Btilde #Since constant in time
-    sigmatilde_funfast = lambda t: sigmatilde #Since constant in time
-    b_funsimple = lambda t,x : b_fun(t,x,None)
-    sigma_funsimple = lambda t,x : sigma_fun(t,x,None)
+    betatilde_funfast = lambda t,theta=None: betatilde #Since constant in time
+    Btilde_funfast = lambda t,theta=None: Btilde #Since constant in time
+    sigmatilde_funfast = lambda t,theta=None: sigmatilde #Since constant in time
+    b_funsimple = lambda t,x,theta=None : b_fun(t,x,theta)
+    sigma_funsimple = lambda t,x,theta=None : sigma_fun(t,x,theta)
     
-    #Xt = sde_dif.landmark_segment(q0, p0, vT, SigmaT, LT, b_funsimple, sigma_funsimple, 
-    #                              betatilde_funfast, 
-    #                              Btilde_funfast, sigmatilde_funfast, pi_prob, 
-    #                              max_iter = args.max_iter,
-    #                              time_grid = time_grid,
-    #                              eta=args.eta,
-    #                              delta=args.delta,
-    #                              theta = None,
-    #                              q_sample = None,
-    #                              q_prob = None,
-    #                              backward_method = 'odeint')
+    theta, Wt, Xt = sde_dif.landmark_segment2(q0, vT, SigmaT, LT, b_funsimple, sigma_funsimple, 
+                                  betatilde_funfast, 
+                                  Btilde_funfast, sigmatilde_funfast, pi_prob, 
+                                  max_iter = args.max_iter,
+                                  time_grid = time_grid,
+                                  eta=args.eta,
+                                  delta=args.delta,
+                                  theta = 1.0,
+                                  q_sample = q_sample,
+                                  q_prob = q_prob,
+                                  backward_method = 'odeint',
+                                  save_step = args.save_step,
+                                  save_path = args.save_path)
     
-    x0 = jnp.hstack((q0,p0))
-    print(b_fun(time_grid[-1], x0, None))
-    #print("Hallo")
-    #print(Xt[-1])
-    #import matplotlib.pyplot as plt
-    
-    #plt.figure()
-    #plt.plot(time_grid, Xt[:,0])
-    #plt.figure()
-    #plt.plot(time_grid, Xt[:,1])
-    #plt.figure()
-    #plt.plot(time_grid, Xt[:,2])
+    jnp.savez(args.save_path+'Wt_Xt_'+str(args.max_iter), Wt=Wt, Xt=Xt)
     
     return
 
@@ -167,3 +172,10 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+
+
+
+
+
+

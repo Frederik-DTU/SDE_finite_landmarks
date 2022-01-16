@@ -98,6 +98,7 @@ def ms_model(n, d, k, grad_k, lmbda, gamma):
         p = x[n:]
         
         dq = dH_dp(q, p, k, theta).reshape(-1)
+        
         dp = -(lmbda*dq+(dH_dq(q, p, grad_k, theta)).reshape(-1))
                 
         return jnp.hstack((dq, dp))
@@ -111,13 +112,13 @@ def ms_model(n, d, k, grad_k, lmbda, gamma):
     
     return ms_drift, ms_diffusion
     
-def ms_auxillary_model(n, d, k, grad_k, lmbda, gamma, qT):
+def ms_auxillary_model(n, d, k, grad_k, lmbda, gamma, qT=None):
     
-    def ms_betatilde(t,theta):
+    def ms_betatilde(t, qT, theta):
+            
+            return jnp.zeros(2*n*d)
         
-        return jnp.zeros(2*n*d)
-    
-    def ms_Btilde(t,theta):
+    def ms_Btilde(t, qT, theta):
         
         def k_qTi(qTi:jnp.ndarray, theta:jnp.ndarray)->jnp.ndarray:
         
@@ -136,14 +137,23 @@ def ms_auxillary_model(n, d, k, grad_k, lmbda, gamma, qT):
                         
         return jnp.hstack((zero, K))
     
-    def ms_diffusion_tilde(t, theta):
+    def ms_diffusion_tilde(t, qT, theta):
         
         val = jnp.diag(gamma)
         zero = jnp.zeros_like(val)
                 
         return jnp.vstack((zero, val))
     
-    return ms_betatilde, ms_Btilde, ms_diffusion_tilde
+    if qT is None:
+        beta = ms_betatilde
+        B = ms_Btilde
+        sigmatilde = ms_diffusion_tilde
+    else:
+        beta = lambda t,theta: ms_betatilde(t,qT,theta)
+        B = lambda t,theta: ms_Btilde(t,qT, theta)
+        sigmatilde = lambda t,theta: ms_diffusion_tilde(t,qT,theta)
+        
+    return beta, B, sigmatilde
 
 def ahs_model(n, d, k, grad_k, k_tau, grad_k_tau, delta, gamma, theta):
     

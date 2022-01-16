@@ -25,7 +25,8 @@ val = jnp.load('1d_saved/Wt_Xt_500.npz')
 Xt = val['Xt']
 qt = Xt[:,0:3].reshape(1,-1,3)
 pt = Xt[:,3:].reshape(1,-1,3)
-for i in range(1, 40):
+N = 16
+for i in range(1, N):
     
     idx = (i+1)*500
     val = jnp.load('1d_saved/Wt_Xt_'+str(idx)+'.npz')
@@ -38,7 +39,7 @@ fig, ax = plt.subplots(1, 2, figsize = (8,6), sharex = False)
 t0 = jnp.ones_like(qt[0,0])*t[0]
 T = jnp.ones_like(qt[0,0])*t[-1]
 
-alphas = jnp.linspace(1/40,1,40)
+alphas = jnp.linspace(1/N,1,N)
 for i in range(len(alphas)):
     ax[0].plot(t, qt[i,:,0].T, color='black', alpha=float(alphas[i]))
 for i in range(len(alphas)):
@@ -51,7 +52,7 @@ ax[0].set(title='Landmarks', ylabel = '', xlabel='time')
 ax[0].grid()
 ax[0].legend()
 
-alphas = jnp.linspace(1/40,1,40)
+alphas = jnp.linspace(1/N,1,N)
 for i in range(len(alphas)):
     ax[1].plot(t, pt[i,:,0].T, color='black', alpha=float(alphas[i]))
 for i in range(len(alphas)):

@@ -20,24 +20,52 @@ import argparse
 
 #Own modules
 import integration_ode as inter
-import landmark_models as lm
+import landmark_models2 as lm
 from plot_landmarks import plot_landmarks
 
 #%% Functions
 
 #Kernel function
-def k(x:jnp.ndarray, theta:jnp.ndarray=None)->jnp.ndarray:
+def k_gauss(x:jnp.ndarray, y,theta:jnp.ndarray=None)->jnp.ndarray:
     
-    theta = 1.0
+    theta = 0.01
     
-    return jnp.exp(-jnp.dot(x,x)/((2*theta)**2))
+    return jnp.exp(-jnp.dot(x-y,x-y)/(2*(theta**2)))
 
 #Kernel gradient
-def grad_k(x:jnp.ndarray, theta:jnp.ndarray=None)->jnp.ndarray:
+def grad_k_gauss(x:jnp.ndarray, y,theta:jnp.ndarray=None)->jnp.ndarray:
+    
+    theta = 0.01
+    
+    return -(theta**(-2))*k_gauss(x,y,theta)*(x-y)
+
+#Kernel function
+def k_exp(x:jnp.ndarray, y,theta:jnp.ndarray=None)->jnp.ndarray:
     
     theta = 1.0
     
-    return (theta**(-2))*k(x,theta)*x
+    return jnp.exp(-jnp.linalg.norm(x-y)/theta)
+
+#Kernel gradient
+def grad_k_exp(x:jnp.ndarray, y,theta:jnp.ndarray=None)->jnp.ndarray:
+    
+    theta = 1.0
+    
+    return -(x-y)/jnp.linalg.norm(x-y)*k_exp(x,y)/theta
+
+#Kernel function
+def k_polynomial(x:jnp.ndarray, y,theta:jnp.ndarray=None)->jnp.ndarray:
+    
+    theta = 1
+    
+    return (jnp.dot(x,y))**theta
+
+#Kernel gradient
+def grad_k_polynomial(x:jnp.ndarray, y,theta:jnp.ndarray=None)->jnp.ndarray:
+    
+    theta = 1
+    
+    return theta*y*(jnp.dot(x,y))**(theta-1)
 
 #%% Parse arguments
 
@@ -62,7 +90,7 @@ def parse_args():
     #Iteration parameters
     parser.add_argument('--max_iter', default=100, 
                         type=int)
-    parser.add_argument('--tol', default=1e-05, 
+    parser.add_argument('--tol', default=1e-5, 
                         type=float)
     
     
@@ -86,11 +114,12 @@ def main():
     q0 = jnp.array([-0.5, 0.0, 0.1])
     p0 = jnp.zeros(args.n)
     qT = jnp.array([-0.25, 0.45, 0.60]) #jnp.array([-0.5, 0.2, 1.0])
+    qT = jnp.array([-0.5, 0.2, 1.0])
     
     time_grid = jnp.arange(args.t0, args.T+args.time_step, args.time_step)
     time_grid = time_grid*(2-time_grid)
     
-    rhs_fun = lm.geodesic_eqrhs(args.n, args.d, k, grad_k)
+    rhs_fun = lm.geodesic_eqrhs(args.n, args.d, k_gauss, grad_k_gauss)
     
     
     
@@ -98,7 +127,7 @@ def main():
     qt = xt[:,0:(args.d*args.n)].reshape(-1, args.n, args.d)
     pt = xt[:,(args.d*args.n):].reshape(-1, args.n, args.d)
     
-    plt_lm.plot_1d_landmarks_bvp(time_grid, qt, pt, title='Hallo')
+    plt_lm.plot_1d_landmarks_bvp(time_grid, qt, pt, qT, title='Gaussian Kernel')
     
     return
 

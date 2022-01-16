@@ -22,6 +22,105 @@ import integration_ode as inter
 
 #%% Functions
 
+def lmmu_step_template(beta, B_fun, a, LT, MT, muT, vT, time_grid, method='odeint'):
+    
+    def compute_Ht(Lt, Mt_inv):
+        
+        val = jnp.einsum('ijn,ink->ijk', Lt.transpose(0,2,1), Mt_inv)
+        
+        return jnp.einsum('ijn,ink->ijk', val, Lt)
+    
+    def compute_Ft(Lt, Mt_inv, vt, mut):
+
+        val = jnp.einsum('ijn,ink->ijk', Lt.transpose(0,2,1), Mt_inv)
+        
+        return jnp.einsum('inj,ij->in', val, vt-mut)
+    
+    def euler_method():
+        
+        if callable(beta):
+            beta_mat = vmap(beta)(time_grid)[..., jnp.newaxis]
+        else:
+            beta_mat = beta
+        if callable(a):
+            a_mat = vmap(a)(time_grid)
+        else:
+            a_mat = a
+        
+        grid_reverse = time_grid[::-1]
+        
+        dL = lambda t,L : -jnp.dot(L,B_fun(t))
+        Lt = inter.ode_integrator(LT, dL, grid_reverse, method='euler')[::-1]
+        
+        dM = -jnp.matmul(jnp.matmul(Lt, a_mat),Lt.transpose(0,2,1))
+        dmu = -jnp.matmul(Lt, beta_mat).reshape(len(dM),-1)
+    
+        _, Mt = inter.integrator(dM[::-1], grid_reverse, method='trapez')
+        _, mut = inter.integrator(dmu[::-1], grid_reverse, method='trapez')
+        
+        Mt = MT+Mt[::-1]
+        mut = muT+mut[::-1]
+        Mt_inv = jnp.linalg.inv(Mt)
+        Ft = vmap(lambda v: compute_Ft(Lt, Mt_inv, v, mut))(vT)
+        Ht = compute_Ht(Lt, Mt_inv)
+        
+        return Lt[0], Mt[0], mut[0], Ft, Ht
+    
+    def odeint_method():
+        
+        def backward_fun(y:jnp.ndarray, 
+                           t:jnp.ndarray,
+                           LT_dim:List[int],
+                           LT_dim_flatten:int)->jnp.ndarray:
+            
+            Lt = y[0:LT_dim_flatten].reshape(LT_dim)
+            
+            dLt = -jnp.dot(Lt, B_fun(t)) #dL(t)=-L(t)B(t)dt
+            dM = -jnp.dot(jnp.dot(Lt, a(t)), Lt.T) #dM(t)=-L(t)a(t)L(t)'dt
+            dmu = -jnp.dot(Lt, beta(t))
+            
+            rhs = jnp.hstack((dLt.reshape(-1), dM.reshape(-1), dmu.reshape(-1)))
+                            
+            return rhs
+        
+        grid_reverse = time_grid[::-1]
+    
+        LT_dim = list(LT.shape)
+        LT_dim_flatten = math.prod(LT_dim)
+        SigmaT_dim = list(MT.shape)
+        SigmaT_dim_flatten = math.prod(SigmaT_dim)
+            
+        yT = jnp.hstack((LT.reshape(-1), MT.reshape(-1), 
+                         muT))
+                
+        y = odeint(backward_fun, yT, grid_reverse, 
+                   args=(LT_dim,LT_dim_flatten))
+        
+        y = y[::-1] #Reversing the array such that yT=yT and y0=y0
+        
+        Lt = y[:, 0:LT_dim_flatten]
+        Mt = y[:, LT_dim_flatten:(LT_dim_flatten+SigmaT_dim_flatten)]
+        mut = y[:,(LT_dim_flatten+SigmaT_dim_flatten):]
+                
+        Lt = Lt.reshape([-1]+LT_dim)
+        Mt = Mt.reshape([-1]+SigmaT_dim)
+        Mt_inv = jnp.linalg.inv(Mt)
+        
+        Ft = vmap(lambda v: compute_Ft(Lt, Mt_inv, v, mut))(vT)
+        Ht = compute_Ht(Lt, Mt_inv)
+        
+        return Lt[0], Mt[0], mut[0], Ft, Ht
+    
+    if len(LT.shape)==1:
+        LT = LT.reshape(1,-1)
+    if len(MT.shape)==1:
+        MT = MT.reshape(1,1)
+    
+    if method=='odeint':
+        return odeint_method() #Lt, Mt, mut, Ft, Ht
+    else:
+        return euler_method() #Lt, Mt, mut, Ft, Ht
+
 def lmmu_step(beta, B_fun, a, LT, MT, muT, vt, time_grid, method='odeint'):
     
     def compute_Ht(Lt, Mt_inv):

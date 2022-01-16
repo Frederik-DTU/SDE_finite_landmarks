@@ -59,6 +59,7 @@ class plot_landmarks(object):
     def plot_1d_landmarks_bvp(self, t:jnp.ndarray, 
                               qt:jnp.ndarray, 
                               pt:jnp.ndarray,
+                              qT,
                               title:str='Exact Matching MS')->None:
         
         qt = qt.reshape(qt.shape[0:2])
@@ -71,7 +72,7 @@ class plot_landmarks(object):
         
         ax[0].plot(t, qt[:,0], color='blue', label='q(t)')
         ax[0].plot(t, qt[:,1:], color='blue')
-        ax[0].scatter(x=T, y=qt[-1], marker='o', s=40, color='navy', label='qT')
+        ax[0].scatter(x=T, y=qT, marker='o', s=40, color='navy', label='qT')
         ax[0].scatter(x=t0, y=qt[0], marker='o', s=40, color='cyan', label='q0')
         ax[0].set(title='Landmarks', ylabel = '', xlabel='time')
         ax[0].grid()

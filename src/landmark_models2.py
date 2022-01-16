@@ -53,39 +53,48 @@ def tv_model(n, d, k, grad_k, gamma):
 
     return tv_drift, tv_diffusion
     
-def tv_auxillary_model(n, d, k, grad_k, gamma, qT):
+def tv_auxillary_model(n, d, k, grad_k, gamma, qT=None):
     
-    def tv_betatilde(t,theta):
+    def tv_betatilde(t,qT, theta):
         
         return jnp.zeros(2*n*d)
     
-    def tv_Btilde(t,theta):
+    def tv_Btilde(t,qT, theta):
         
         def k_qTi(qTi:jnp.ndarray, theta:jnp.ndarray)->jnp.ndarray:
         
             K_val = jnp.zeros((d, n*d))
-            K = vmap(k)(qTi-qT,theta).reshape(-1)
+            K = vmap(lambda x: k(qTi,x,theta))(qT).reshape(-1)
     
             for i in range(d):
                 K_val = K_val.at[i,i::d].set(K)
     
             return K_val
         
-        K = vmap(k_qTi)(qT,theta).reshape(-1,n*d)
+        K = vmap(lambda x: k_qTi(x,theta))(qT).reshape(-1,n*d)
         
         zero = jnp.zeros_like(K)
         K = jnp.vstack((K, zero))
                         
         return jnp.hstack((jnp.zeros_like(K), K))
     
-    def tv_diffusion_tilde(t, theta):
+    def tv_diffusion_tilde(t, qT, theta):
         
         val = jnp.diag(gamma)
         zero = jnp.zeros_like(val)
                 
         return jnp.vstack((zero, val))
     
-    return tv_betatilde, tv_Btilde, tv_diffusion_tilde
+    if qT is None:
+        beta = tv_betatilde
+        B = tv_Btilde
+        sigmatilde = tv_diffusion_tilde
+    else:
+        beta = lambda t,theta: tv_betatilde(t,qT,theta)
+        B = lambda t,theta: tv_Btilde(t,qT, theta)
+        sigmatilde = lambda t,theta: tv_diffusion_tilde(t,qT,theta)
+        
+    return beta, B, sigmatilde
 
 def ms_model(n, d, k, grad_k, lmbda, gamma): 
     
@@ -98,6 +107,7 @@ def ms_model(n, d, k, grad_k, lmbda, gamma):
         p = x[n:]
         
         dq = dH_dp(q, p, k, theta).reshape(-1)
+        
         dp = -(lmbda*dq+(dH_dq(q, p, grad_k, theta)).reshape(-1))
                 
         return jnp.hstack((dq, dp))
@@ -111,68 +121,74 @@ def ms_model(n, d, k, grad_k, lmbda, gamma):
     
     return ms_drift, ms_diffusion
     
-def ms_auxillary_model(n, d, k, grad_k, lmbda, gamma, qT):
+def ms_auxillary_model(n, d, k, grad_k, lmbda, gamma, qT=None):
     
-    def ms_betatilde(t,theta):
+    def ms_betatilde(t, qT, theta):
+            
+            return jnp.zeros(2*n*d)
         
-        return jnp.zeros(2*n*d)
-    
-    def ms_Btilde(t,theta):
+    def ms_Btilde(t, qT, theta):
         
         def k_qTi(qTi:jnp.ndarray, theta:jnp.ndarray)->jnp.ndarray:
         
             K_val = jnp.zeros((d, n*d))
-            K = vmap(k)(qTi-qT,theta).reshape(-1)
+            K = vmap(lambda x: k(qTi,x,theta))(qT).reshape(-1)
     
             for i in range(d):
                 K_val = K_val.at[i,i::d].set(K)
     
             return K_val
         
-        K = vmap(k_qTi)(qT,theta).reshape(-1,n*d)
+        K = vmap(lambda x: k_qTi(x,theta))(qT).reshape(-1,n*d)
         
         K = jnp.vstack((K, -lmbda*K))
         zero = jnp.zeros_like(K)
                         
         return jnp.hstack((zero, K))
     
-    def ms_diffusion_tilde(t, theta):
+    def ms_diffusion_tilde(t, qT, theta):
         
         val = jnp.diag(gamma)
         zero = jnp.zeros_like(val)
                 
         return jnp.vstack((zero, val))
     
-    return ms_betatilde, ms_Btilde, ms_diffusion_tilde
+    if qT is None:
+        beta = ms_betatilde
+        B = ms_Btilde
+        sigmatilde = ms_diffusion_tilde
+    else:
+        beta = lambda t,theta: ms_betatilde(t,qT,theta)
+        B = lambda t,theta: ms_Btilde(t,qT, theta)
+        sigmatilde = lambda t,theta: ms_diffusion_tilde(t,qT,theta)
+        
+    return beta, B, sigmatilde
 
 def ahs_model(n, d, k, grad_k, k_tau, grad_k_tau, delta, gamma, theta):
     
     def z(qi, delta_l):
         
-        return jnp.dot(grad_k_tau(qi-delta_l,theta),gamma)
+        return jnp.dot(grad_k_tau(qi,delta_l,theta),gamma)
     
     def sigma_l(qi, delta_l):
         
-        return gamma*k_tau(qi-delta_l, theta)
+        return gamma*k_tau(qi,delta_l, theta)
     
     grad_z = grad(z, argnums=0)
     dim = [2*n, d]
     
     def dqi_extra(qi):
         
-        z_update = lambda delta_l: z(qi, delta_l)
-        k_tau_update = lambda delta_l: k_tau(qi-delta_l, theta)
-        
-        z_val = vmap(z_update)(delta)
-        k_tau_val = vmap(k_tau_update)(delta)
+        z_val = vmap(lambda delta_l: z(qi, delta_l))(delta)
+        k_tau_val = vmap(lambda delta_l: k_tau(qi,delta_l, theta))(delta)
                                 
         return jnp.dot(z_val,k_tau_val)*gamma
     
     def dpi_extra(qi, pi):
         
         z_update = lambda delta_l: z(qi, delta_l)
-        grad_k_tau_udate = lambda delta_l: grad_k_tau(qi-delta_l, theta)
-        k_tau_update = lambda delta_l: k_tau(qi-delta_l, theta)
+        grad_k_tau_udate = lambda delta_l: grad_k_tau(qi,delta_l, theta)
+        k_tau_update = lambda delta_l: k_tau(qi,delta_l, theta)
         grad_z_update = lambda delta_l: grad_z(qi, delta_l)
         
         z_val = vmap(z_update)(delta)
@@ -191,7 +207,7 @@ def ahs_model(n, d, k, grad_k, k_tau, grad_k_tau, delta, gamma, theta):
     
     def dpi_diffusion(qi, pi):
         
-        delta_fun = lambda delta_l: jnp.dot(grad_k_tau(qi-delta_l, theta), pi)
+        delta_fun = lambda delta_l: jnp.dot(grad_k_tau(qi,delta_l, theta), pi)
         
         return vmap(delta_fun)(delta).reshape(-1)
             
@@ -223,29 +239,34 @@ def ahs_auxillary_model(n, d, k, grad_k, k_tau, grad_k_tau, delta, gamma, theta,
     
     def z(qi, delta_l):
         
-        return jnp.dot(grad_k_tau(qi-delta_l,theta),gamma)
+        print(gamma.shape)
+        print(qi.shape)
+        print(delta_l.shape)
+        print(grad_k_tau(qi,delta_l,theta).shape)
+        
+        return jnp.dot(grad_k_tau(qi,delta_l,theta),gamma)
     
     def sigma_l(qi, delta_l):
         
-        return gamma*k_tau(qi-delta_l, theta)
+        return gamma*k_tau(qi,delta_l, theta)
     
     grad_z = grad(z, argnums=0)
     
     def dqi_extra(qi):
         
-        z_update = lambda delta_l: z(qi, delta_l)
-        k_tau_update = lambda delta_l: k_tau(qi-delta_l, theta)
+        z_val = vmap(lambda delta_l: z(qi, delta_l))(delta)
+        k_tau_val = vmap(lambda delta_l: k_tau(qi,delta_l, theta))(delta)
         
-        z_val = vmap(z_update)(delta)
-        k_tau_val = vmap(k_tau_update)(delta)
+        print(z_val.shape)
+        print(k_tau_val.shape)
                                 
         return jnp.dot(z_val,k_tau_val)*gamma
     
     def dpi_extra(qi):
         
         z_update = lambda delta_l: z(qi, delta_l)
-        grad_k_tau_udate = lambda delta_l: grad_k_tau(qi-delta_l, theta)
-        k_tau_update = lambda delta_l: k_tau(qi-delta_l, theta)
+        grad_k_tau_udate = lambda delta_l: grad_k_tau(qi,delta_l, theta)
+        k_tau_update = lambda delta_l: k_tau(qi,delta_l, theta)
         grad_z_update = lambda delta_l: grad_z(qi, delta_l)
         
         z_val = vmap(z_update)(delta)
@@ -264,7 +285,7 @@ def ahs_auxillary_model(n, d, k, grad_k, k_tau, grad_k_tau, delta, gamma, theta,
     
     def dpi_diffusion(qi):
         
-        delta_fun = lambda delta_l: grad_k_tau(qi-delta_l, theta)
+        delta_fun = lambda delta_l: grad_k_tau(qi,delta_l, theta)
         
         return vmap(delta_fun)(delta).reshape(-1)
     
@@ -280,7 +301,7 @@ def ahs_auxillary_model(n, d, k, grad_k, k_tau, grad_k_tau, delta, gamma, theta,
         def k_qTi(qTi:jnp.ndarray, theta:jnp.ndarray)->jnp.ndarray:
         
             K_val = jnp.zeros((d, n*d))
-            K = vmap(k)(qTi-qT,theta).reshape(-1)
+            K = vmap(lambda x: k(qTi, x,theta))(qT).reshape(-1)
     
             for i in range(d):
                 K_val = K_val.at[i,i::d].set(K)
@@ -311,7 +332,7 @@ def dH_dq(q, p, grad_k, theta=None)->jnp.ndarray:
         
     def dH_dqi(qi, pi)->jnp.ndarray:
         
-        grad_K = vmap(grad_k)(qi-q,theta)
+        grad_K = vmap(lambda x: grad_k(qi,x,theta))(q)
         inner_prod = jnp.dot(p, pi)
         
         return (grad_K.T * inner_prod).sum(axis=1)
@@ -328,7 +349,7 @@ def dH_dp(q, p, k, theta=None)->jnp.ndarray:
         
     def dH_dpi(qi)->jnp.ndarray:
         
-        K = vmap(k)(qi-q,theta)
+        K = vmap(lambda x: k(qi,x,theta))(q)
         
         return (p.T*K).sum(axis=1)
     

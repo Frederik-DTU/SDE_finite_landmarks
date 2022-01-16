@@ -21,7 +21,7 @@ def k(x:jnp.ndarray, theta:jnp.ndarray)->jnp.ndarray:
     
     theta = 1.0
     
-    return jnp.exp(-jnp.dot(x,x)/((2*theta)**2))
+    return jnp.exp(-jnp.dot(x,x)/(2*(theta**2)))
 
 #Kernel gradient
 def grad_k(x:jnp.ndarray, theta:jnp.ndarray)->jnp.ndarray:
@@ -32,6 +32,7 @@ def grad_k(x:jnp.ndarray, theta:jnp.ndarray)->jnp.ndarray:
 
 q0 = jnp.array([-0.5, 0.0, 0.1]).reshape(3,1)
 p0 = jnp.array([-0.1, 0.0, 0.1]).reshape(3,1)
+p0 = jnp.array([-10, 5.0, 10]).reshape(3,1)
 qT = jnp.array([-0.5, 0.2, 1.0]).reshape(3,1)
 vT = qT
 
@@ -52,6 +53,7 @@ x = jnp.hstack((q0.reshape(-1), p0.reshape(-1)))
 
 t0 = time.time()
 drift = ms_drift(0,x,None)
+print(drift)
 t1 = time.time()
 print(t1-t0)
 
