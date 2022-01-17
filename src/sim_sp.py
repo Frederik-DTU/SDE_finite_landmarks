@@ -135,4 +135,4 @@ def sim_sde_euler(x0:jnp.ndarray,
 
     _, y = lax.scan(sde_step, x0, xs=(grid[:-1], diff_t, dW))
     
-    return jnp.concatenate((x0.reshape(1,-1), y), axis=0)
+    return jnp.concatenate((x0.reshape(1,-1), y), axis=0).squeeze()
