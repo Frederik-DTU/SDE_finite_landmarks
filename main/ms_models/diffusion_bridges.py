@@ -343,7 +343,7 @@ def landmark_segment(q0:jnp.ndarray,
                 
                 if (i+1) % save_step==0:
                     print("Computing iteration: ", i+1)
-                    jnp.savez(save_path+'Wt_Xt_theta'+str(i+1), Wt=Wt, Xt=Xt, 
+                    jnp.savez(save_path+'Wt_Xt_theta_'+str(i+1), Wt=Wt, Xt=Xt, 
                               theta=theta_list)
             
         return theta_list, Wt, Xt
@@ -941,7 +941,7 @@ def landmark_segment2(q0:jnp.ndarray,
                 
                 if (i+1) % save_step==0:
                     print("Computing iteration: ", i+1)
-                    jnp.savez(save_path+'Wt_Xt_theta'+str(i+1), Wt=Wt, Xt=Xt, 
+                    jnp.savez(save_path+'Wt_Xt_theta_'+str(i+1), Wt=Wt, Xt=Xt, 
                               theta=theta_list)
             
             return theta_list, Wt, Xt
