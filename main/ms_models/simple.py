@@ -158,7 +158,7 @@ def main():
                                   time_grid = time_grid,
                                   eta=args.eta,
                                   delta=args.delta,
-                                  theta = 1.0,
+                                  theta = None,
                                   q_sample = q_sample,
                                   q_prob = q_prob,
                                   backward_method = 'odeint',

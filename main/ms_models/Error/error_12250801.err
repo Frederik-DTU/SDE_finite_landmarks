@@ -1,0 +1,8 @@
+Loaded module: python3/3.8.2
+WARNING:absl:No GPU/TPU found, falling back to CPU. (Set TF_CPP_MIN_LOG_LEVEL=0 and rerun for more info.)
+Traceback (most recent call last):
+  File "simple.py", line 176, in <module>
+    main()
+  File "simple.py", line 154, in main
+    theta, Wt, Xt = sde_dif.landmark_segment2(q0, vT, SigmaT, LT, b_funsimple, sigma_funsimple, 
+ValueError: not enough values to unpack (expected 3, got 2)

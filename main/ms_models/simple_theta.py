@@ -155,7 +155,7 @@ def main():
                                   save_step = args.save_step,
                                   save_path = args.save_path)
     
-    jnp.savez(args.save_path+'Wt_Xt_'+str(args.max_iter), Wt=Wt, Xt=Xt)
+    jnp.savez(args.save_path+'Wt_Xt_theta_'+str(args.max_iter), Wt=Wt, Xt=Xt)
     
     return
 

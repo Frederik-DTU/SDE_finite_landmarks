@@ -17,7 +17,7 @@ module swap python3/3.8.2
 python3 simple.py \
     --save_path simple_saved/ \
     --eta 0.98 \
-    --delta 0.01 \
+    --delta 0.001 \
     --lmbda 1.0 \
     --epsilon 0.001 \
     --time_step 0.001 \
