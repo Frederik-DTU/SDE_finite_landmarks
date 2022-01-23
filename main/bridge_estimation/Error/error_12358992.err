@@ -1,0 +1,112 @@
+Loaded module: python3/3.8.2
+WARNING:absl:No GPU/TPU found, falling back to CPU. (Set TF_CPP_MIN_LOG_LEVEL=0 and rerun for more info.)
+Traceback (most recent call last):
+  File "ellipse.py", line 372, in <module>
+    main_ahs()
+  File "ellipse.py", line 332, in main_ahs
+    beta = beta_fun(0, args.theta) #Since constant in time
+  File "../../src/landmark_models2.py", line 327, in <lambda>
+    beta = lambda t,theta: ahs_betatilde(t,qT,theta)
+  File "../../src/landmark_models2.py", line 291, in ahs_betatilde
+    dq = 1/2*vmap(lambda x: dqi_extra(x,theta))(qT.reshape(n,d)).reshape(-1)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/traceback_util.py", line 162, in reraise_with_filtered_traceback
+    return fun(*args, **kwargs)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/api.py", line 1452, in batched_fun
+    out_flat = batching.batch(
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/linear_util.py", line 166, in call_wrapped
+    ans = self.f(*args, **dict(self.params, **kwargs))
+  File "../../src/landmark_models2.py", line 291, in <lambda>
+    dq = 1/2*vmap(lambda x: dqi_extra(x,theta))(qT.reshape(n,d)).reshape(-1)
+  File "../../src/landmark_models2.py", line 257, in dqi_extra
+    z_val = vmap(lambda delta_l: z(qi, delta_l,theta))(delta)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/traceback_util.py", line 162, in reraise_with_filtered_traceback
+    return fun(*args, **kwargs)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/api.py", line 1452, in batched_fun
+    out_flat = batching.batch(
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/linear_util.py", line 166, in call_wrapped
+    ans = self.f(*args, **dict(self.params, **kwargs))
+  File "../../src/landmark_models2.py", line 257, in <lambda>
+    z_val = vmap(lambda delta_l: z(qi, delta_l,theta))(delta)
+  File "../../src/landmark_models2.py", line 243, in z
+    return jnp.dot(grad_k_tau(qi,delta_l,theta),gamma).reshape(())
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/numpy/lax_numpy.py", line 1731, in _reshape
+    return lax.reshape(a, newshape, None)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/lax/lax.py", line 830, in reshape
+    return reshape_p.bind(
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/core.py", line 272, in bind
+    out = top_trace.process_primitive(self, tracers, params)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/interpreters/batching.py", line 163, in process_primitive
+    val_out, dim_out = batched_primitive(vals_in, dims_in, **params)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/lax/lax.py", line 4130, in _reshape_batch_rule
+    return reshape(operand, operand.shape[:1] + new_sizes, dimensions), 0
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/lax/lax.py", line 830, in reshape
+    return reshape_p.bind(
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/core.py", line 272, in bind
+    out = top_trace.process_primitive(self, tracers, params)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/interpreters/batching.py", line 163, in process_primitive
+    val_out, dim_out = batched_primitive(vals_in, dims_in, **params)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/lax/lax.py", line 4130, in _reshape_batch_rule
+    return reshape(operand, operand.shape[:1] + new_sizes, dimensions), 0
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/lax/lax.py", line 830, in reshape
+    return reshape_p.bind(
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/core.py", line 272, in bind
+    out = top_trace.process_primitive(self, tracers, params)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/core.py", line 624, in process_primitive
+    return primitive.impl(*tracers, **params)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/interpreters/xla.py", line 416, in apply_primitive
+    compiled_fun = xla_primitive_callable(prim, *unsafe_map(arg_spec, args),
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/util.py", line 187, in wrapper
+    return cached(config._trace_context(), *args, **kwargs)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/util.py", line 180, in cached
+    return f(*args, **kwargs)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/interpreters/xla.py", line 439, in xla_primitive_callable
+    compiled = _xla_callable_uncached(lu.wrap_init(prim_fun), device, None,
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/interpreters/xla.py", line 759, in _xla_callable_uncached
+    return lower_xla_callable(fun, device, backend, name, donated_invars,
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/interpreters/xla.py", line 771, in lower_xla_callable
+    jaxpr, out_avals, consts = pe.trace_to_jaxpr_final(
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/interpreters/partial_eval.py", line 1542, in trace_to_jaxpr_final
+    jaxpr, out_avals, consts = trace_to_subjaxpr_dynamic(fun, main, in_avals)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/interpreters/partial_eval.py", line 1520, in trace_to_subjaxpr_dynamic
+    ans = fun.call_wrapped(*in_tracers)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/linear_util.py", line 166, in call_wrapped
+    ans = self.f(*args, **dict(self.params, **kwargs))
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/interpreters/xla.py", line 434, in prim_fun
+    out = prim.bind(*args, **params)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/core.py", line 272, in bind
+    out = top_trace.process_primitive(self, tracers, params)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/interpreters/partial_eval.py", line 1317, in process_primitive
+    out_avals = primitive.abstract_eval(*avals, **params)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/lax/lax.py", line 2274, in standard_abstract_eval
+    return ShapedArray(shape_rule(*avals, **kwargs), dtype_rule(*avals, **kwargs),
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/lax/lax.py", line 4098, in _reshape_shape_rule
+    raise TypeError(msg.format(new_sizes, np.shape(operand)))
+jax._src.traceback_util.UnfilteredStackTrace: TypeError: reshape total size must be unchanged, got new_sizes (15, 6) for shape (15, 6, 2).
+
+The stack trace below excludes JAX-internal frames.
+The preceding is the original exception that occurred, unmodified.
+
+--------------------
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "ellipse.py", line 372, in <module>
+    main_ahs()
+  File "ellipse.py", line 332, in main_ahs
+    beta = beta_fun(0, args.theta) #Since constant in time
+  File "../../src/landmark_models2.py", line 327, in <lambda>
+    beta = lambda t,theta: ahs_betatilde(t,qT,theta)
+  File "../../src/landmark_models2.py", line 291, in ahs_betatilde
+    dq = 1/2*vmap(lambda x: dqi_extra(x,theta))(qT.reshape(n,d)).reshape(-1)
+  File "../../src/landmark_models2.py", line 291, in <lambda>
+    dq = 1/2*vmap(lambda x: dqi_extra(x,theta))(qT.reshape(n,d)).reshape(-1)
+  File "../../src/landmark_models2.py", line 257, in dqi_extra
+    z_val = vmap(lambda delta_l: z(qi, delta_l,theta))(delta)
+  File "../../src/landmark_models2.py", line 257, in <lambda>
+    z_val = vmap(lambda delta_l: z(qi, delta_l,theta))(delta)
+  File "../../src/landmark_models2.py", line 243, in z
+    return jnp.dot(grad_k_tau(qi,delta_l,theta),gamma).reshape(())
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/numpy/lax_numpy.py", line 1731, in _reshape
+    return lax.reshape(a, newshape, None)
+TypeError: reshape total size must be unchanged, got new_sizes (15, 6) for shape (15, 6, 2).

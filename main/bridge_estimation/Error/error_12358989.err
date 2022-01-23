@@ -1,0 +1,78 @@
+Loaded module: python3/3.8.2
+WARNING:absl:No GPU/TPU found, falling back to CPU. (Set TF_CPP_MIN_LOG_LEVEL=0 and rerun for more info.)
+Traceback (most recent call last):
+  File "ellipse.py", line 374, in <module>
+    main_tv()
+  File "ellipse.py", line 220, in main_tv
+    _ = sde_dif.landmark_segment(q0, vT, SigmaT, LT, b_funsimple, sigma_funsimple, 
+  File "../../src/diffusion_bridges.py", line 268, in landmark_segment
+    = update_mat(theta, Wt)
+  File "../../src/diffusion_bridges.py", line 111, in update_mat
+    = bf.lmmu_step(beta_fun_theta, B_fun_theta, 
+  File "../../src/backward_filtering.py", line 219, in lmmu_step
+    return odeint_method() #Lt, Mt, mut, Ft, Ht
+  File "../../src/backward_filtering.py", line 195, in odeint_method
+    y = odeint(backward_fun, yT, grid_reverse, 
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/scipy/integrate/odepack.py", line 241, in odeint
+    output = _odepack.odeint(func, y0, t, args, Dfun, col_deriv, ml, mu,
+  File "../../src/backward_filtering.py", line 177, in backward_fun
+    dLt = -jnp.dot(Lt, B_fun(t)) #dL(t)=-L(t)B(t)dt
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/traceback_util.py", line 162, in reraise_with_filtered_traceback
+    return fun(*args, **kwargs)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/api.py", line 416, in cache_miss
+    out_flat = xla.xla_call(
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/core.py", line 1632, in bind
+    return call_bind(self, fun, *args, **params)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/core.py", line 1623, in call_bind
+    outs = primitive.process(top_trace, fun, tracers, params)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/core.py", line 1635, in process
+    return trace.process_call(self, fun, tracers, params)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/core.py", line 627, in process_call
+    return primitive.impl(f, *tracers, **params)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/interpreters/xla.py", line 687, in _xla_call_impl
+    compiled_fun = _xla_callable(fun, device, backend, name, donated_invars,
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/linear_util.py", line 263, in memoized_fun
+    ans = call(fun, *args)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/interpreters/xla.py", line 759, in _xla_callable_uncached
+    return lower_xla_callable(fun, device, backend, name, donated_invars,
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/interpreters/xla.py", line 771, in lower_xla_callable
+    jaxpr, out_avals, consts = pe.trace_to_jaxpr_final(
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/interpreters/partial_eval.py", line 1542, in trace_to_jaxpr_final
+    jaxpr, out_avals, consts = trace_to_subjaxpr_dynamic(fun, main, in_avals)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/interpreters/partial_eval.py", line 1520, in trace_to_subjaxpr_dynamic
+    ans = fun.call_wrapped(*in_tracers)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/linear_util.py", line 166, in call_wrapped
+    ans = self.f(*args, **dict(self.params, **kwargs))
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/numpy/lax_numpy.py", line 4792, in dot
+    return lax.dot(a, b, precision=precision)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/lax/lax.py", line 692, in dot
+    raise TypeError("Incompatible shapes for dot: got {} and {}.".format(
+jax._src.traceback_util.UnfilteredStackTrace: TypeError: Incompatible shapes for dot: got (15, 30) and (60, 60).
+
+The stack trace below excludes JAX-internal frames.
+The preceding is the original exception that occurred, unmodified.
+
+--------------------
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "ellipse.py", line 374, in <module>
+    main_tv()
+  File "ellipse.py", line 220, in main_tv
+    _ = sde_dif.landmark_segment(q0, vT, SigmaT, LT, b_funsimple, sigma_funsimple, 
+  File "../../src/diffusion_bridges.py", line 268, in landmark_segment
+    = update_mat(theta, Wt)
+  File "../../src/diffusion_bridges.py", line 111, in update_mat
+    = bf.lmmu_step(beta_fun_theta, B_fun_theta, 
+  File "../../src/backward_filtering.py", line 219, in lmmu_step
+    return odeint_method() #Lt, Mt, mut, Ft, Ht
+  File "../../src/backward_filtering.py", line 195, in odeint_method
+    y = odeint(backward_fun, yT, grid_reverse, 
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/scipy/integrate/odepack.py", line 241, in odeint
+    output = _odepack.odeint(func, y0, t, args, Dfun, col_deriv, ml, mu,
+  File "../../src/backward_filtering.py", line 177, in backward_fun
+    dLt = -jnp.dot(Lt, B_fun(t)) #dL(t)=-L(t)B(t)dt
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/numpy/lax_numpy.py", line 4792, in dot
+    return lax.dot(a, b, precision=precision)
+TypeError: Incompatible shapes for dot: got (15, 30) and (60, 60).

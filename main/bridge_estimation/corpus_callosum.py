@@ -23,6 +23,8 @@ from scipy.stats import multivariate_normal
 import argparse
 
 import sys
+sys.path.insert(1, '../../src/')
+print(sys.path)
 
 from scipy import io
 
@@ -159,6 +161,7 @@ def parse_args():
                         type=float)
     parser.add_argument('--theta', default=0.5, 
                         type=float)
+    parser.add_argument('--update_theta', default=0, type=int)
     
     #Iteration parameters
     parser.add_argument('--max_iter', default=10, #20000, 
@@ -172,39 +175,43 @@ def parse_args():
 
 #%% TV-model
 
+#%% TV-model
+
 def main_tv():
     
     #Arguments
     args = parse_args()
     
-    if args.theta is None:
+    if args.update_theta == 0:
         save_path = args.save_path+'tv'
+        theta_update = None
     else:
         save_path = args.save_path+'tv_theta'
+        theta_update = args.theta
 
-    gamma = 1/jnp.sqrt(n)*jnp.ones(n*d)
+    gamma = 1/jnp.sqrt(n)*jnp.ones(n)
 
     time_grid = jnp.arange(args.t0, args.T+args.time_step, args.time_step)
     time_grid = time_grid*(2-time_grid)
     
-    SigmaT = args.epsilon**2*jnp.eye(n*d)
-    LT = jnp.hstack((jnp.eye(n*d), jnp.zeros((n*d,n*d))))
+    SigmaT = args.epsilon**2*jnp.eye(n)
+    LT = jnp.hstack((jnp.eye(n), jnp.zeros((n,n))))
     
     b_fun, sigma_fun = lm.tv_model(n, d, k, grad_k, gamma)
     beta_fun, B_fun, sigmatilde_fun = \
         lm.tv_auxillary_model(n, d, k, grad_k, gamma, qT)
     
-    if args.theta is None:
+    if args.update_theta == 0:
         
-        beta = beta_fun(0, None) #Since constant in time
-        B = B_fun(0, None) #Since constant in time
-        sigmatilde = sigmatilde_fun(0, None) #Since constant in time
+        beta = beta_fun(0, args.theta) #Since constant in time
+        B = B_fun(0, args.theta) #Since constant in time
+        sigmatilde = sigmatilde_fun(0, args.theta) #Since constant in time
         
-        beta_funfast = lambda t,theta=None: beta #Since constant in time
-        B_funfast = lambda t,theta=None: B #Since constant in time
-        sigmatilde_funfast = lambda t,theta=None: sigmatilde #Since constant in time
-        b_funsimple = lambda t,x,theta=None : b_fun(t,x,theta)
-        sigma_funsimple = lambda t,x,theta=None : sigma_fun(t,x,theta)
+        beta_funfast = lambda t,theta=args.theta: beta #Since constant in time
+        B_funfast = lambda t,theta=args.theta: B #Since constant in time
+        sigmatilde_funfast = lambda t,theta=args.theta: sigmatilde #Since constant in time
+        b_funsimple = lambda t,x,theta=args.theta : b_fun(t,x,theta)
+        sigma_funsimple = lambda t,x,theta=args.theta : sigma_fun(t,x,theta)
     else:
         beta_funfast = lambda t,theta: beta_fun(0.0, theta) #Since constant in time
         B_funfast = lambda t,theta: B_fun(0.0, theta) #Since constant in time
@@ -219,7 +226,7 @@ def main_tv():
                                       time_grid = time_grid,
                                       eta=args.eta,
                                       delta=args.delta,
-                                      theta = args.theta,
+                                      theta = theta_update,
                                       q_sample = q_sample,
                                       q_sample_prob = q_sample_prob,
                                       q_prob = q_prob,
@@ -236,34 +243,36 @@ def main_ms():
     #Arguments
     args = parse_args()
     
-    if args.theta is None:
+    if args.update_theta == 0:
         save_path = args.save_path+'ms'
+        theta_update = None
     else:
         save_path = args.save_path+'ms_theta'
+        theta_update = args.theta
     
-    gamma = 1/jnp.sqrt(n)*jnp.ones(n*d)
+    gamma = 1/jnp.sqrt(n)*jnp.ones(n)
     lmbda = 1.0
 
     time_grid = jnp.arange(args.t0, args.T+args.time_step, args.time_step)
     time_grid = time_grid*(2-time_grid)
     
-    SigmaT = args.epsilon**2*jnp.eye(n*d)
-    LT = jnp.hstack((jnp.eye(n*d), jnp.zeros((n*d,n*d))))
+    SigmaT = args.epsilon**2*jnp.eye(n)
+    LT = jnp.hstack((jnp.eye(n), jnp.zeros((n,n))))
     
     b_fun, sigma_fun = lm.ms_model(n, d, k, grad_k, lmbda, gamma)
     beta_fun, B_fun, sigmatilde_fun = \
         lm.ms_auxillary_model(n, d, k, grad_k, lmbda, gamma, qT)
     
-    if args.theta is None:
-        beta = beta_fun(0, None) #Since constant in time
-        B = B_fun(0, None) #Since constant in time
-        sigmatilde = sigmatilde_fun(0, None) #Since constant in time
+    if args.update_theta == 0:
+        beta = beta_fun(0, args.theta) #Since constant in time
+        B = B_fun(0, args.theta) #Since constant in time
+        sigmatilde = sigmatilde_fun(0, args.theta) #Since constant in time
         
-        beta_funfast = lambda t,theta=None: beta #Since constant in time
-        B_funfast = lambda t,theta=None: B #Since constant in time
-        sigmatilde_funfast = lambda t,theta=None: sigmatilde #Since constant in time
-        b_funsimple = lambda t,x,theta=None : b_fun(t,x,theta)
-        sigma_funsimple = lambda t,x,theta=None : sigma_fun(t,x,theta)
+        beta_funfast = lambda t,theta=args.theta: beta #Since constant in time
+        B_funfast = lambda t,theta=args.theta: B #Since constant in time
+        sigmatilde_funfast = lambda t,theta=args.theta: sigmatilde #Since constant in time
+        b_funsimple = lambda t,x,theta=args.theta : b_fun(t,x,theta)
+        sigma_funsimple = lambda t,x,theta=args.theta : sigma_fun(t,x,theta)
     else:
         beta_funfast = lambda t,theta: beta_fun(0.0, theta) #Since constant in time
         B_funfast = lambda t,theta: B_fun(0.0, theta) #Since constant in time
@@ -278,7 +287,7 @@ def main_ms():
                                   time_grid = time_grid,
                                   eta=args.eta,
                                   delta=args.delta,
-                                  theta = args.theta,
+                                  theta = theta_update,
                                   q_sample = q_sample,
                                   q_sample_prob = q_sample_prob,
                                   q_prob = q_prob,
@@ -295,19 +304,21 @@ def main_ahs():
     #Arguments
     args = parse_args()
     
-    if args.theta is None:
+    if args.update_theta == 0:
         save_path = args.save_path+'ahs'
+        theta_update = None
     else:
         save_path = args.save_path+'ahs_theta'
+        theta_update = args.theta
 
     time_grid = jnp.arange(args.t0, args.T+args.time_step, args.time_step)
     time_grid = time_grid*(2-time_grid)
     
-    gamma = jnp.array([0.1*2/jnp.pi, 0.1*2/jnp.pi])
-    delta = jnp.vstack((jnp.linspace(-2.5, 2.5, 6),jnp.linspace(-2.5, 2.5, 6))).T
+    gamma = jnp.array(0.1*2/jnp.pi)
+    delta = jnp.linspace(-2.5, 2.5, 6)
     
-    SigmaT = args.epsilon**2*jnp.eye(n*d)
-    LT = jnp.hstack((jnp.eye(n*d), jnp.zeros((n*d,n*d))))
+    SigmaT = args.epsilon**2*jnp.eye(n)
+    LT = jnp.hstack((jnp.eye(n), jnp.zeros((n,n))))
     
     b_fun, sigma_fun = lm.ahs_model(n, d, k, grad_k, k_tau, grad_k_tau, grad_grad_k_tau,
                                     delta, gamma)
@@ -319,16 +330,16 @@ def main_ahs():
                                                                        delta, gamma, 
                                                                        qT)
     
-    if args.theta is None:
-        beta = beta_fun(0, None) #Since constant in time
-        B = B_fun(0, None) #Since constant in time
-        sigmatilde = sigmatilde_fun(0, None) #Since constant in time
+    if args.update_theta == 0:
+        beta = beta_fun(0, args.theta) #Since constant in time
+        B = B_fun(0, args.theta) #Since constant in time
+        sigmatilde = sigmatilde_fun(0, args.theta) #Since constant in time
         
-        beta_funfast = lambda t,theta=None: beta #Since constant in time
-        B_funfast = lambda t,theta=None: B #Since constant in time
-        sigmatilde_funfast = lambda t,theta=None: sigmatilde #Since constant in time
-        b_funsimple = lambda t,x,theta=None : b_fun(t,x,theta)
-        sigma_funsimple = lambda t,x,theta=None : sigma_fun(t,x,theta)
+        beta_funfast = lambda t,theta=args.theta: beta #Since constant in time
+        B_funfast = lambda t,theta=args.theta: B #Since constant in time
+        sigmatilde_funfast = lambda t,theta=args.theta: sigmatilde #Since constant in time
+        b_funsimple = lambda t,x,theta=args.theta : b_fun(t,x,theta)
+        sigma_funsimple = lambda t,x,theta=args.theta : sigma_fun(t,x,theta)
     else:
         beta_funfast = lambda t,theta: beta_fun(0.0, theta) #Since constant in time
         B_funfast = lambda t,theta: B_fun(0.0, theta) #Since constant in time
@@ -343,7 +354,7 @@ def main_ahs():
                                   time_grid = time_grid,
                                   eta=args.eta,
                                   delta=args.delta,
-                                  theta = args.theta,
+                                  theta = theta_update,
                                   q_sample = q_sample,
                                   q_sample_prob = q_sample_prob,
                                   q_prob = q_prob,
@@ -365,9 +376,6 @@ if __name__ == '__main__':
         main_tv()
     else:
         main_ms()
-
-
-
 
 
 
