@@ -27,7 +27,7 @@ def mnormal_pdf(X, mu, cov):
     det = jnp.linalg.det(cov)
     k = X.shape[-1]
     den = jnp.sqrt(det*(2*jnp.pi)**k)
-    def pdf_step(x):
+    def pdf_step(x,mu):
         
         x_diff = x-mu
         val = jnp.exp(-1/2*x_diff.T.dot(cov_inv).dot(x_diff))        
@@ -35,9 +35,9 @@ def mnormal_pdf(X, mu, cov):
         return val/den
     
     if len(X.shape)==1:
-        return pdf_step(X)
+        return pdf_step(X,mu)
     else:
-        return vmap(pdf_step)(X)
+        return vmap(pdf_step)(X,mu)
     
 def sim_unif(a:float=0.0, b:float=1.0, dim:int=1):
     

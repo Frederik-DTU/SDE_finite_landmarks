@@ -188,7 +188,7 @@ def lmmu_step(beta, B_fun, a, LT, MT, muT, vt, time_grid, method='odeint'):
         LT_dim_flatten = math.prod(LT_dim)
         SigmaT_dim = list(MT.shape)
         SigmaT_dim_flatten = math.prod(SigmaT_dim)
-            
+        
         yT = jnp.hstack((LT.reshape(-1), MT.reshape(-1), 
                          muT))
                 
