@@ -20,6 +20,7 @@ python3 simple_data.py \
     --eta 0.98 \
     --delta 0.001 \
     --epsilon 0.001 \
-    --theta None \
+    --theta 0.2 \
+    --update_theta 1 \
     --max_iter 20000 \
     --save_step 500

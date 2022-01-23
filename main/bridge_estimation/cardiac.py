@@ -24,7 +24,6 @@ import argparse
 
 import sys
 sys.path.insert(1, '../../src/')
-print(sys.path)
 
 import glob
 
@@ -200,8 +199,6 @@ def parse_args():
 
 #%% TV-model
 
-#%% TV-model
-
 def main_tv():
     
     #Arguments
@@ -214,13 +211,13 @@ def main_tv():
         save_path = args.save_path+'tv_theta'
         theta_update = args.theta
 
-    gamma = 1/jnp.sqrt(n)*jnp.ones(n)
+    gamma = 1/jnp.sqrt(n)*jnp.ones(n*d)
 
     time_grid = jnp.arange(args.t0, args.T+args.time_step, args.time_step)
     time_grid = time_grid*(2-time_grid)
     
-    SigmaT = args.epsilon**2*jnp.eye(n)
-    LT = jnp.hstack((jnp.eye(n), jnp.zeros((n,n))))
+    SigmaT = args.epsilon**2*jnp.eye(n*d)
+    LT = jnp.hstack((jnp.eye(n*d), jnp.zeros((n*d,n*d))))
     
     b_fun, sigma_fun = lm.tv_model(n, d, k, grad_k, gamma)
     beta_fun, B_fun, sigmatilde_fun = \
@@ -275,14 +272,14 @@ def main_ms():
         save_path = args.save_path+'ms_theta'
         theta_update = args.theta
     
-    gamma = 1/jnp.sqrt(n)*jnp.ones(n)
+    gamma = 1/jnp.sqrt(n)*jnp.ones(n*d)
     lmbda = 1.0
 
     time_grid = jnp.arange(args.t0, args.T+args.time_step, args.time_step)
     time_grid = time_grid*(2-time_grid)
     
-    SigmaT = args.epsilon**2*jnp.eye(n)
-    LT = jnp.hstack((jnp.eye(n), jnp.zeros((n,n))))
+    SigmaT = args.epsilon**2*jnp.eye(n*d)
+    LT = jnp.hstack((jnp.eye(n*d), jnp.zeros((n*d,n*d))))
     
     b_fun, sigma_fun = lm.ms_model(n, d, k, grad_k, lmbda, gamma)
     beta_fun, B_fun, sigmatilde_fun = \
@@ -339,11 +336,11 @@ def main_ahs():
     time_grid = jnp.arange(args.t0, args.T+args.time_step, args.time_step)
     time_grid = time_grid*(2-time_grid)
     
-    gamma = jnp.array(0.1*2/jnp.pi)
-    delta = jnp.linspace(-2.5, 2.5, 6)
+    gamma = jnp.array([0.1*2/jnp.pi, 0.1*2/jnp.pi])
+    delta = jnp.vstack((jnp.linspace(-2.5, 2.5, 6),jnp.linspace(-2.5, 2.5, 6))).T
     
-    SigmaT = args.epsilon**2*jnp.eye(n)
-    LT = jnp.hstack((jnp.eye(n), jnp.zeros((n,n))))
+    SigmaT = args.epsilon**2*jnp.eye(n*d)
+    LT = jnp.hstack((jnp.eye(n*d), jnp.zeros((n*d,n*d))))
     
     b_fun, sigma_fun = lm.ahs_model(n, d, k, grad_k, k_tau, grad_k_tau, grad_grad_k_tau,
                                     delta, gamma)
@@ -401,10 +398,3 @@ if __name__ == '__main__':
         main_tv()
     else:
         main_ms()
-
-
-
-
-
-
-

@@ -25,7 +25,6 @@ import argparse
 #Link to module folder
 import sys
 sys.path.insert(1, '../../src/')
-print(sys.path)
 
 #Own modules
 import diffusion_bridges as sde_dif
