@@ -1,8 +1,8 @@
 #!/bin/sh
 #BSUB -q hpc
-#BSUB -J ellipse_ahs_theta
+#BSUB -J corpus_callosum_ahs_theta
 #BSUB -R "span[hosts=1]"
-#BSUB -n 4 
+#BSUB -n 1 
 #BSUB -W 24:00
 #BSUB -R "rusage[mem=32GB]"
 #BSUB -u s164222@student.dtu.dk
@@ -14,8 +14,8 @@
 #Load the following in case
 module swap python3/3.8.2
 
-python3 ellipse.py \
-    --save_path ellipse_saved/ \
+python3 corpus_callosum.py \
+    --save_path corpus_callosum_models/ \
     --model ahs \
     --eta 0.98 \
     --delta 0.001 \

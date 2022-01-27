@@ -1,8 +1,0 @@
-Loaded module: python3/3.8.2
-WARNING:absl:No GPU/TPU found, falling back to CPU. (Set TF_CPP_MIN_LOG_LEVEL=0 and rerun for more info.)
-usage: simple_data.py [-h] [--save_path SAVE_PATH] [--model MODEL] [--eta ETA]
-                      [--delta DELTA] [--epsilon EPSILON]
-                      [--time_step TIME_STEP] [--t0 T0] [--T T]
-                      [--theta THETA] [--max_iter MAX_ITER]
-                      [--save_step SAVE_STEP]
-simple_data.py: error: argument --theta: invalid float value: 'None'

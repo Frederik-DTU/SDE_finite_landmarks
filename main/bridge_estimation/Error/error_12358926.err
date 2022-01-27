@@ -1,5 +1,0 @@
-Loaded module: python3/3.8.2
-  File "simple_data.py", line 152
-    parser.add_argument('--update_theta', default=0, type=int)
-                                                             ^
-TabError: inconsistent use of tabs and spaces in indentation
