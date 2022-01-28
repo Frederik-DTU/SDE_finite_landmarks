@@ -1,0 +1,54 @@
+Loaded module: python3/3.8.2
+WARNING:absl:No GPU/TPU found, falling back to CPU. (Set TF_CPP_MIN_LOG_LEVEL=0 and rerun for more info.)
+Traceback (most recent call last):
+  File "simple_data.py", line 413, in <module>
+    main_tv()
+  File "simple_data.py", line 209, in main_tv
+    Wt, Xt = sde_dif.landmark_template_qT(vT,
+  File "../../src/diffusion_bridges.py", line 1117, in landmark_template_qT
+    Kq0 = kernel_matrix(q0)
+  File "../../src/diffusion_bridges.py", line 836, in kernel_matrix
+    return vmap(compute_row)(q0)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/traceback_util.py", line 162, in reraise_with_filtered_traceback
+    return fun(*args, **kwargs)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/api.py", line 1452, in batched_fun
+    out_flat = batching.batch(
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/linear_util.py", line 166, in call_wrapped
+    ans = self.f(*args, **dict(self.params, **kwargs))
+  File "../../src/diffusion_bridges.py", line 830, in compute_row
+    return vmap(lambda q: k(q,qi))(q0)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/traceback_util.py", line 162, in reraise_with_filtered_traceback
+    return fun(*args, **kwargs)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/api.py", line 1452, in batched_fun
+    out_flat = batching.batch(
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/linear_util.py", line 166, in call_wrapped
+    ans = self.f(*args, **dict(self.params, **kwargs))
+  File "../../src/diffusion_bridges.py", line 830, in <lambda>
+    return vmap(lambda q: k(q,qi))(q0)
+  File "simple_data.py", line 39, in k
+    return jnp.exp(-jnp.dot(x-y,x-y)/(2*(theta**2)))
+jax._src.traceback_util.UnfilteredStackTrace: TypeError: unsupported operand type(s) for ** or pow(): 'NoneType' and 'int'
+
+The stack trace below excludes JAX-internal frames.
+The preceding is the original exception that occurred, unmodified.
+
+--------------------
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "simple_data.py", line 413, in <module>
+    main_tv()
+  File "simple_data.py", line 209, in main_tv
+    Wt, Xt = sde_dif.landmark_template_qT(vT,
+  File "../../src/diffusion_bridges.py", line 1117, in landmark_template_qT
+    Kq0 = kernel_matrix(q0)
+  File "../../src/diffusion_bridges.py", line 836, in kernel_matrix
+    return vmap(compute_row)(q0)
+  File "../../src/diffusion_bridges.py", line 830, in compute_row
+    return vmap(lambda q: k(q,qi))(q0)
+  File "../../src/diffusion_bridges.py", line 830, in <lambda>
+    return vmap(lambda q: k(q,qi))(q0)
+  File "simple_data.py", line 39, in k
+    return jnp.exp(-jnp.dot(x-y,x-y)/(2*(theta**2)))
+TypeError: unsupported operand type(s) for ** or pow(): 'NoneType' and 'int'

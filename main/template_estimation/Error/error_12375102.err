@@ -1,0 +1,58 @@
+Loaded module: python3/3.8.2
+WARNING:absl:No GPU/TPU found, falling back to CPU. (Set TF_CPP_MIN_LOG_LEVEL=0 and rerun for more info.)
+Traceback (most recent call last):
+  File "ellipse.py", line 423, in <module>
+    main_ms()
+  File "ellipse.py", line 298, in main_ms
+    _ = sde_dif.landmark_template_qT(vT,
+  File "../../src/diffusion_bridges.py", line 1217, in landmark_template_qT
+    Wt, Xt = update_W_X(x0, Xt, Wt)
+  File "../../src/diffusion_bridges.py", line 913, in update_W_X
+    Xt_circ = vmap(lambda F,H,w: sim_gp(x0, b_fun_theta, sigma_fun_theta, F, H, w))(Ft,Ht,Wt_circ)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/traceback_util.py", line 162, in reraise_with_filtered_traceback
+    return fun(*args, **kwargs)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/api.py", line 1452, in batched_fun
+    out_flat = batching.batch(
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/linear_util.py", line 166, in call_wrapped
+    ans = self.f(*args, **dict(self.params, **kwargs))
+  File "../../src/diffusion_bridges.py", line 913, in <lambda>
+    Xt_circ = vmap(lambda F,H,w: sim_gp(x0, b_fun_theta, sigma_fun_theta, F, H, w))(Ft,Ht,Wt_circ)
+  File "../../src/diffusion_bridges.py", line 802, in sim_gp
+    _, x = lax.scan(update_xi, init=x0, xs=(time_grid[:-1], diff_grid, dW, 
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/traceback_util.py", line 162, in reraise_with_filtered_traceback
+    return fun(*args, **kwargs)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/lax/control_flow.py", line 1357, in scan
+    out = scan_p.bind(*consts, *in_flat,
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/lax/control_flow.py", line 1933, in scan_bind
+    return core.AxisPrimitive.bind(scan_p, *args, **params)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/core.py", line 272, in bind
+    out = top_trace.process_primitive(self, tracers, params)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/interpreters/batching.py", line 163, in process_primitive
+    val_out, dim_out = batched_primitive(vals_in, dims_in, **params)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/lax/control_flow.py", line 1846, in _scan_batching_rule
+    outs = scan_p.bind(
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/lax/control_flow.py", line 1933, in scan_bind
+    return core.AxisPrimitive.bind(scan_p, *args, **params)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/core.py", line 272, in bind
+    out = top_trace.process_primitive(self, tracers, params)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/core.py", line 624, in process_primitive
+    return primitive.impl(*tracers, **params)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/interpreters/xla.py", line 416, in apply_primitive
+    compiled_fun = xla_primitive_callable(prim, *unsafe_map(arg_spec, args),
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/util.py", line 187, in wrapper
+    return cached(config._trace_context(), *args, **kwargs)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/util.py", line 180, in cached
+    return f(*args, **kwargs)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/interpreters/xla.py", line 439, in xla_primitive_callable
+    compiled = _xla_callable_uncached(lu.wrap_init(prim_fun), device, None,
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/interpreters/xla.py", line 759, in _xla_callable_uncached
+    return lower_xla_callable(fun, device, backend, name, donated_invars,
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/interpreters/xla.py", line 892, in compile
+    self._executable = XlaCompiledComputation.from_xla_computation(
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/interpreters/xla.py", line 921, in from_xla_computation
+    compiled = compile_or_get_cached(backend, xla_computation, options)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/interpreters/xla.py", line 863, in compile_or_get_cached
+    return backend_compile(backend, computation, compile_options)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/interpreters/xla.py", line 474, in backend_compile
+    return backend.compile(built_c, compile_options=options)
+KeyboardInterrupt

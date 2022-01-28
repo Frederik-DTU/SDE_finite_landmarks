@@ -1,0 +1,56 @@
+Loaded module: python3/3.8.2
+WARNING:absl:No GPU/TPU found, falling back to CPU. (Set TF_CPP_MIN_LOG_LEVEL=0 and rerun for more info.)
+Traceback (most recent call last):
+  File "corpus_callosum.py", line 411, in <module>
+    main_ms()
+  File "corpus_callosum.py", line 292, in main_ms
+    _ = sde_dif.landmark_template_qT(vT,
+  File "../../src/diffusion_bridges.py", line 1189, in landmark_template_qT
+    q0, Xt = update_q0_X(q0, p0, Xt, Wt)
+  File "../../src/diffusion_bridges.py", line 1019, in update_q0_X
+    KL_q0circ = Kq0_circ.dot(grad_qL(q0_circ, Wt).reshape(n,d)).reshape(-1)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/traceback_util.py", line 162, in reraise_with_filtered_traceback
+    return fun(*args, **kwargs)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/api.py", line 918, in grad_f
+    _, g = value_and_grad_f(*args, **kwargs)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/traceback_util.py", line 162, in reraise_with_filtered_traceback
+    return fun(*args, **kwargs)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/api.py", line 1000, in value_and_grad_f
+    g = vjp_py(np.ones((), dtype=dtype))
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/tree_util.py", line 326, in <lambda>
+    func = lambda *args, **kw: original_func(*args, **kw)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/api.py", line 2219, in _vjp_pullback_wrapper
+    ans = fun(*args)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/tree_util.py", line 326, in <lambda>
+    func = lambda *args, **kw: original_func(*args, **kw)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/interpreters/ad.py", line 123, in unbound_vjp
+    arg_cts = backward_pass(jaxpr, reduce_axes, consts, dummy_args, cts)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/interpreters/ad.py", line 225, in backward_pass
+    cts_out = reducing_transposes[eqn.primitive](
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/lax/control_flow.py", line 1768, in _scan_transpose
+    outs = scan_p.bind(
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/lax/control_flow.py", line 1933, in scan_bind
+    return core.AxisPrimitive.bind(scan_p, *args, **params)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/core.py", line 272, in bind
+    out = top_trace.process_primitive(self, tracers, params)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/core.py", line 624, in process_primitive
+    return primitive.impl(*tracers, **params)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/interpreters/xla.py", line 416, in apply_primitive
+    compiled_fun = xla_primitive_callable(prim, *unsafe_map(arg_spec, args),
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/util.py", line 187, in wrapper
+    return cached(config._trace_context(), *args, **kwargs)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/util.py", line 180, in cached
+    return f(*args, **kwargs)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/interpreters/xla.py", line 439, in xla_primitive_callable
+    compiled = _xla_callable_uncached(lu.wrap_init(prim_fun), device, None,
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/interpreters/xla.py", line 759, in _xla_callable_uncached
+    return lower_xla_callable(fun, device, backend, name, donated_invars,
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/interpreters/xla.py", line 892, in compile
+    self._executable = XlaCompiledComputation.from_xla_computation(
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/interpreters/xla.py", line 921, in from_xla_computation
+    compiled = compile_or_get_cached(backend, xla_computation, options)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/interpreters/xla.py", line 863, in compile_or_get_cached
+    return backend_compile(backend, computation, compile_options)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/interpreters/xla.py", line 474, in backend_compile
+    return backend.compile(built_c, compile_options=options)
+KeyboardInterrupt

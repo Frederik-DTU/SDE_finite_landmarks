@@ -1,0 +1,86 @@
+Loaded module: python3/3.8.2
+WARNING:absl:No GPU/TPU found, falling back to CPU. (Set TF_CPP_MIN_LOG_LEVEL=0 and rerun for more info.)
+Traceback (most recent call last):
+  File "simple_data.py", line 419, in <module>
+    main_ms()
+  File "simple_data.py", line 294, in main_ms
+    _ = sde_dif.landmark_template_qT(vT,
+  File "../../src/diffusion_bridges.py", line 1220, in landmark_template_qT
+    theta, Xt = update_theta_X(x0, theta, Xt, Wt)
+  File "../../src/diffusion_bridges.py", line 1061, in update_theta_X
+    b_fun_thetacirc, Xtcirc = update_mat(theta_circ, Wt)
+  File "../../src/diffusion_bridges.py", line 892, in update_mat
+    Xt = vmap(lambda F,H,w: sim_gp(x0, b_fun_theta, sigma_fun_theta, F, H, w))(Ft,Ht,Wt)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/traceback_util.py", line 162, in reraise_with_filtered_traceback
+    return fun(*args, **kwargs)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/api.py", line 1452, in batched_fun
+    out_flat = batching.batch(
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/linear_util.py", line 166, in call_wrapped
+    ans = self.f(*args, **dict(self.params, **kwargs))
+  File "../../src/diffusion_bridges.py", line 892, in <lambda>
+    Xt = vmap(lambda F,H,w: sim_gp(x0, b_fun_theta, sigma_fun_theta, F, H, w))(Ft,Ht,Wt)
+  File "../../src/diffusion_bridges.py", line 802, in sim_gp
+    _, x = lax.scan(update_xi, init=x0, xs=(time_grid[:-1], diff_grid, dW, 
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/traceback_util.py", line 162, in reraise_with_filtered_traceback
+    return fun(*args, **kwargs)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/lax/control_flow.py", line 1357, in scan
+    out = scan_p.bind(*consts, *in_flat,
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/lax/control_flow.py", line 1933, in scan_bind
+    return core.AxisPrimitive.bind(scan_p, *args, **params)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/core.py", line 272, in bind
+    out = top_trace.process_primitive(self, tracers, params)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/interpreters/batching.py", line 163, in process_primitive
+    val_out, dim_out = batched_primitive(vals_in, dims_in, **params)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/lax/control_flow.py", line 1821, in _scan_batching_rule
+    jaxpr_batched, batched_out = batching.batch_jaxpr(
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/interpreters/batching.py", line 497, in batch_jaxpr
+    return batch_jaxpr_axes(
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/interpreters/batching.py", line 509, in batch_jaxpr_axes
+    jaxpr_out, _, consts = pe.trace_to_jaxpr_dynamic(f, avals_in)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/interpreters/partial_eval.py", line 1510, in trace_to_jaxpr_dynamic
+    jaxpr, out_avals, consts = trace_to_subjaxpr_dynamic(fun, main, in_avals)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/interpreters/partial_eval.py", line 1520, in trace_to_subjaxpr_dynamic
+    ans = fun.call_wrapped(*in_tracers)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/linear_util.py", line 166, in call_wrapped
+    ans = self.f(*args, **dict(self.params, **kwargs))
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/core.py", line 143, in jaxpr_as_fun
+    return eval_jaxpr(closed_jaxpr.jaxpr, closed_jaxpr.consts, *args)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/core.py", line 361, in eval_jaxpr
+    ans = eval_jaxpr_eqn(eqn, map(read, eqn.invars))
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/core.py", line 343, in eval_jaxpr_eqn
+    return eqn.primitive.bind(*(subfuns + in_vals), **bind_params)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/core.py", line 1632, in bind
+    return call_bind(self, fun, *args, **params)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/core.py", line 1623, in call_bind
+    outs = primitive.process(top_trace, fun, tracers, params)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/core.py", line 1635, in process
+    return trace.process_call(self, fun, tracers, params)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/interpreters/partial_eval.py", line 1330, in process_call
+    jaxpr, out_avals, consts = trace_to_subjaxpr_dynamic(f, self.main, in_avals)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/interpreters/partial_eval.py", line 1520, in trace_to_subjaxpr_dynamic
+    ans = fun.call_wrapped(*in_tracers)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/linear_util.py", line 166, in call_wrapped
+    ans = self.f(*args, **dict(self.params, **kwargs))
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/core.py", line 361, in eval_jaxpr
+    ans = eval_jaxpr_eqn(eqn, map(read, eqn.invars))
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/core.py", line 343, in eval_jaxpr_eqn
+    return eqn.primitive.bind(*(subfuns + in_vals), **bind_params)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/core.py", line 272, in bind
+    out = top_trace.process_primitive(self, tracers, params)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/interpreters/partial_eval.py", line 1317, in process_primitive
+    out_avals = primitive.abstract_eval(*avals, **params)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/lax/lax.py", line 6958, in _iota_abstract_eval
+    return ShapedArray(shape, dtype)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/core.py", line 1093, in __init__
+    super().__init__(dtype, weak_type=weak_type)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/core.py", line 1027, in __init__
+    self.dtype = np.dtype(dtypes.canonicalize_dtype(dtype))
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/util.py", line 201, in wrapper
+    return memoized(config._trace_context(), *args, **kwargs)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/config.py", line 330, in _trace_context
+    return (self.x64_enabled, self.jax_numpy_rank_promotion,
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/config.py", line 270, in get_state
+    return val if val is not unset else self._read(name)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/config.py", line 92, in _read
+    self.check_exists(name)
+KeyboardInterrupt

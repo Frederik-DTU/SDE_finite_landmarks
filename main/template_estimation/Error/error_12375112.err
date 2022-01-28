@@ -1,0 +1,84 @@
+Loaded module: python3/3.8.2
+WARNING:absl:No GPU/TPU found, falling back to CPU. (Set TF_CPP_MIN_LOG_LEVEL=0 and rerun for more info.)
+Traceback (most recent call last):
+  File "simple_data.py", line 419, in <module>
+    main_ms()
+  File "simple_data.py", line 294, in main_ms
+    _ = sde_dif.landmark_template_qT(vT,
+  File "../../src/diffusion_bridges.py", line 1189, in landmark_template_qT
+    q0, Xt = update_q0_X(q0, p0, Xt, Wt)
+  File "../../src/diffusion_bridges.py", line 1019, in update_q0_X
+    KL_q0circ = Kq0_circ.dot(grad_qL(q0_circ, Wt).reshape(n,d)).reshape(-1)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/traceback_util.py", line 162, in reraise_with_filtered_traceback
+    return fun(*args, **kwargs)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/api.py", line 918, in grad_f
+    _, g = value_and_grad_f(*args, **kwargs)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/traceback_util.py", line 162, in reraise_with_filtered_traceback
+    return fun(*args, **kwargs)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/api.py", line 993, in value_and_grad_f
+    ans, vjp_py = _vjp(f_partial, *dyn_args, reduce_axes=reduce_axes)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/api.py", line 2312, in _vjp
+    out_primal, out_vjp = ad.vjp(
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/interpreters/ad.py", line 116, in vjp
+    out_primals, pvals, jaxpr, consts = linearize(traceable, *primals)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/interpreters/ad.py", line 103, in linearize
+    jaxpr, out_pvals, consts = pe.trace_to_jaxpr(jvpfun_flat, in_pvals)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/interpreters/partial_eval.py", line 513, in trace_to_jaxpr
+    jaxpr, (out_pvals, consts, env) = fun.call_wrapped(pvals)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/linear_util.py", line 166, in call_wrapped
+    ans = self.f(*args, **dict(self.params, **kwargs))
+  File "../../src/diffusion_bridges.py", line 946, in compute_qLtheta
+    Xt = vmap(lambda F,H,w: sim_gp(x0, b_fun_theta, sigma_fun_theta, F, H, w))(Ft,Ht,Wt)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/traceback_util.py", line 162, in reraise_with_filtered_traceback
+    return fun(*args, **kwargs)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/api.py", line 1452, in batched_fun
+    out_flat = batching.batch(
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/linear_util.py", line 166, in call_wrapped
+    ans = self.f(*args, **dict(self.params, **kwargs))
+  File "../../src/diffusion_bridges.py", line 946, in <lambda>
+    Xt = vmap(lambda F,H,w: sim_gp(x0, b_fun_theta, sigma_fun_theta, F, H, w))(Ft,Ht,Wt)
+  File "../../src/diffusion_bridges.py", line 802, in sim_gp
+    _, x = lax.scan(update_xi, init=x0, xs=(time_grid[:-1], diff_grid, dW, 
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/traceback_util.py", line 162, in reraise_with_filtered_traceback
+    return fun(*args, **kwargs)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/lax/control_flow.py", line 1357, in scan
+    out = scan_p.bind(*consts, *in_flat,
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/lax/control_flow.py", line 1933, in scan_bind
+    return core.AxisPrimitive.bind(scan_p, *args, **params)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/core.py", line 272, in bind
+    out = top_trace.process_primitive(self, tracers, params)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/interpreters/batching.py", line 163, in process_primitive
+    val_out, dim_out = batched_primitive(vals_in, dims_in, **params)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/lax/control_flow.py", line 1846, in _scan_batching_rule
+    outs = scan_p.bind(
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/lax/control_flow.py", line 1933, in scan_bind
+    return core.AxisPrimitive.bind(scan_p, *args, **params)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/core.py", line 272, in bind
+    out = top_trace.process_primitive(self, tracers, params)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/interpreters/ad.py", line 288, in process_primitive
+    primal_out, tangent_out = jvp(primals_in, tangents_in, **params)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/lax/control_flow.py", line 1599, in _scan_jvp
+    out_flat = scan_p.bind(
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/lax/control_flow.py", line 1933, in scan_bind
+    return core.AxisPrimitive.bind(scan_p, *args, **params)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/core.py", line 270, in bind
+    args, used_axis_names(self, params) if self._dispatch_on_params else None)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/core.py", line 1775, in used_axis_names
+    subst_axis_names(primitive, params, subst)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/core.py", line 1794, in subst_axis_names
+    new_params[name] = subst_axis_names_jaxpr(jaxpr, shadowed_subst)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/core.py", line 1851, in subst_axis_names_jaxpr
+    subst.axis_names |= used_axis_names_jaxpr(jaxpr)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/util.py", line 187, in wrapper
+    return cached(config._trace_context(), *args, **kwargs)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/util.py", line 180, in cached
+    return f(*args, **kwargs)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/core.py", line 1846, in used_axis_names_jaxpr
+    do_subst_axis_names_jaxpr(jaxpr, subst)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/core.py", line 1836, in do_subst_axis_names_jaxpr
+    eqns = [subst_axis_names_eqn(eqn, subst, var_map) for eqn in jaxpr.eqns]
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/core.py", line 1836, in <listcomp>
+    eqns = [subst_axis_names_eqn(eqn, subst, var_map) for eqn in jaxpr.eqns]
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/core.py", line 1821, in subst_axis_names_eqn
+    outvars = [subst_axis_names_var(v, subst, var_map) for v in eqn.outvars]
+KeyboardInterrupt

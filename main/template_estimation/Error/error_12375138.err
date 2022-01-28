@@ -1,0 +1,10 @@
+Loaded module: python3/3.8.2
+WARNING:absl:No GPU/TPU found, falling back to CPU. (Set TF_CPP_MIN_LOG_LEVEL=0 and rerun for more info.)
+Traceback (most recent call last):
+  File "simple_data.py", line 413, in <module>
+    main_tv()
+  File "simple_data.py", line 209, in main_tv
+    Wt, Xt = sde_dif.landmark_template_qT(vT,
+  File "../../src/diffusion_bridges.py", line 1097, in landmark_template_qT
+    dim_brown = sigmatilde_fun(time_grid[0], vT[0]).shape[-1]
+TypeError: <lambda>() missing 1 required positional argument: 'theta'

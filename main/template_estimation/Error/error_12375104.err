@@ -1,0 +1,106 @@
+Loaded module: python3/3.8.2
+WARNING:absl:No GPU/TPU found, falling back to CPU. (Set TF_CPP_MIN_LOG_LEVEL=0 and rerun for more info.)
+Traceback (most recent call last):
+  File "ellipse.py", line 421, in <module>
+    main_tv()
+  File "ellipse.py", line 218, in main_tv
+    _ = sde_dif.landmark_template_qT(vT,
+  File "../../src/diffusion_bridges.py", line 1189, in landmark_template_qT
+    q0, Xt = update_q0_X(q0, p0, Xt, Wt)
+  File "../../src/diffusion_bridges.py", line 1012, in update_q0_X
+    Xt_circ = vmap(lambda F,H,w: sim_gp(x0_circ, b_fun_theta, 
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/traceback_util.py", line 162, in reraise_with_filtered_traceback
+    return fun(*args, **kwargs)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/api.py", line 1452, in batched_fun
+    out_flat = batching.batch(
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/linear_util.py", line 166, in call_wrapped
+    ans = self.f(*args, **dict(self.params, **kwargs))
+  File "../../src/diffusion_bridges.py", line 1012, in <lambda>
+    Xt_circ = vmap(lambda F,H,w: sim_gp(x0_circ, b_fun_theta, 
+  File "../../src/diffusion_bridges.py", line 802, in sim_gp
+    _, x = lax.scan(update_xi, init=x0, xs=(time_grid[:-1], diff_grid, dW, 
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/traceback_util.py", line 162, in reraise_with_filtered_traceback
+    return fun(*args, **kwargs)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/lax/control_flow.py", line 1357, in scan
+    out = scan_p.bind(*consts, *in_flat,
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/lax/control_flow.py", line 1933, in scan_bind
+    return core.AxisPrimitive.bind(scan_p, *args, **params)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/core.py", line 272, in bind
+    out = top_trace.process_primitive(self, tracers, params)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/interpreters/batching.py", line 163, in process_primitive
+    val_out, dim_out = batched_primitive(vals_in, dims_in, **params)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/lax/control_flow.py", line 1846, in _scan_batching_rule
+    outs = scan_p.bind(
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/lax/control_flow.py", line 1933, in scan_bind
+    return core.AxisPrimitive.bind(scan_p, *args, **params)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/core.py", line 272, in bind
+    out = top_trace.process_primitive(self, tracers, params)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/core.py", line 624, in process_primitive
+    return primitive.impl(*tracers, **params)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/interpreters/xla.py", line 416, in apply_primitive
+    compiled_fun = xla_primitive_callable(prim, *unsafe_map(arg_spec, args),
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/util.py", line 187, in wrapper
+    return cached(config._trace_context(), *args, **kwargs)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/util.py", line 180, in cached
+    return f(*args, **kwargs)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/interpreters/xla.py", line 439, in xla_primitive_callable
+    compiled = _xla_callable_uncached(lu.wrap_init(prim_fun), device, None,
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/interpreters/xla.py", line 759, in _xla_callable_uncached
+    return lower_xla_callable(fun, device, backend, name, donated_invars,
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/interpreters/xla.py", line 829, in lower_xla_callable
+    out_nodes = jaxpr_subcomp(ctx, jaxpr, xla_consts, *xla_args)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/interpreters/xla.py", line 577, in jaxpr_subcomp
+    ans = rule(ctx, map(aval, eqn.invars), map(aval, eqn.outvars),
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/interpreters/xla.py", line 1341, in f_new
+    jaxpr, _, consts = pe.trace_to_jaxpr_dynamic(wrapped_fun, avals_in)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/interpreters/partial_eval.py", line 1510, in trace_to_jaxpr_dynamic
+    jaxpr, out_avals, consts = trace_to_subjaxpr_dynamic(fun, main, in_avals)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/interpreters/partial_eval.py", line 1520, in trace_to_subjaxpr_dynamic
+    ans = fun.call_wrapped(*in_tracers)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/linear_util.py", line 166, in call_wrapped
+    ans = self.f(*args, **dict(self.params, **kwargs))
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/lax/control_flow.py", line 1444, in _scan_impl
+    return _scan_impl_loop(
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/lax/control_flow.py", line 1405, in _scan_impl_loop
+    _, *outs = while_loop(cond_fun, body_fun, init_val)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/traceback_util.py", line 162, in reraise_with_filtered_traceback
+    return fun(*args, **kwargs)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/lax/control_flow.py", line 305, in while_loop
+    init_vals, init_avals, body_jaxpr, in_tree, *rest = _create_jaxpr(init_val)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/lax/control_flow.py", line 286, in _create_jaxpr
+    cond_jaxpr, cond_consts, cond_tree = _initial_style_jaxpr(
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/util.py", line 187, in wrapper
+    return cached(config._trace_context(), *args, **kwargs)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/util.py", line 180, in cached
+    return f(*args, **kwargs)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/lax/control_flow.py", line 77, in _initial_style_jaxpr
+    jaxpr, consts, out_tree = _initial_style_open_jaxpr(
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/util.py", line 187, in wrapper
+    return cached(config._trace_context(), *args, **kwargs)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/util.py", line 180, in cached
+    return f(*args, **kwargs)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/lax/control_flow.py", line 71, in _initial_style_open_jaxpr
+    jaxpr, _, consts = pe.trace_to_jaxpr_dynamic(wrapped_fun, in_avals, debug)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/interpreters/partial_eval.py", line 1510, in trace_to_jaxpr_dynamic
+    jaxpr, out_avals, consts = trace_to_subjaxpr_dynamic(fun, main, in_avals)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/interpreters/partial_eval.py", line 1520, in trace_to_subjaxpr_dynamic
+    ans = fun.call_wrapped(*in_tracers)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/linear_util.py", line 166, in call_wrapped
+    ans = self.f(*args, **dict(self.params, **kwargs))
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/lax/control_flow.py", line 1389, in cond_fun
+    return i < length
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/core.py", line 511, in __lt__
+    def __lt__(self, other): return self.aval._lt(self, other)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/numpy/lax_numpy.py", line 6585, in deferring_binary_op
+    return binary_op(self, other)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/numpy/lax_numpy.py", line 755, in fn
+    x1, x2 =  _promote_args(numpy_fn.__name__, x1, x2)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/numpy/lax_numpy.py", line 581, in _promote_args
+    return _promote_shapes(fun_name, *_promote_dtypes(*args))
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/numpy/lax_numpy.py", line 526, in _promote_dtypes
+    return [lax._convert_element_type(x, to_dtype, weak_type) for x in args]
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/numpy/lax_numpy.py", line 526, in <listcomp>
+    return [lax._convert_element_type(x, to_dtype, weak_type) for x in args]
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/lax/lax.py", line 463, in _convert_element_type
+    if (dtypes.issubdtype(old_dtype, np.complexfloating) and
+KeyboardInterrupt
