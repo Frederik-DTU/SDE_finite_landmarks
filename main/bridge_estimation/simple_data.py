@@ -34,12 +34,12 @@ import sim_sp as sp
 #%% Functions
 
 #Kernel function
-def k(x:jnp.ndarray, y, theta:jnp.ndarray=None)->jnp.ndarray:
+def k(x:jnp.ndarray, y, theta:jnp.ndarray=1.0)->jnp.ndarray:
     
     return jnp.exp(-jnp.dot(x-y,x-y)/(2*(theta**2)))
 
 #Kernel gradient
-def grad_k(x:jnp.ndarray, y, theta:jnp.ndarray=None)->jnp.ndarray:
+def grad_k(x:jnp.ndarray, y, theta:jnp.ndarray=1.0)->jnp.ndarray:
     
     return -(theta**(-2))*k(x,y,theta)*(x-y)
 
@@ -183,7 +183,6 @@ def main_tv():
         lm.tv_auxillary_model(n, d, k, grad_k, gamma, qT)
     
     if args.update_theta == 0:
-        
         beta = beta_fun(0, args.theta) #Since constant in time
         B = B_fun(0, args.theta) #Since constant in time
         sigmatilde = sigmatilde_fun(0, args.theta) #Since constant in time

@@ -35,12 +35,12 @@ import sim_sp as sp
 #%% Functions
 
 #Kernel function
-def k(x:jnp.ndarray, y, theta:jnp.ndarray=None)->jnp.ndarray:
+def k(x:jnp.ndarray, y, theta:jnp.ndarray=1.0)->jnp.ndarray:
     
     return jnp.exp(-jnp.dot(x-y,x-y)/(2*(theta**2)))
 
 #Kernel gradient
-def grad_k(x:jnp.ndarray, y, theta:jnp.ndarray=None)->jnp.ndarray:
+def grad_k(x:jnp.ndarray, y, theta:jnp.ndarray=1.0)->jnp.ndarray:
     
     return -(theta**(-2))*k(x,y,theta)*(x-y)
 
