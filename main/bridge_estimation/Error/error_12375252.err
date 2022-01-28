@@ -1,0 +1,142 @@
+Loaded module: python3/3.8.2
+WARNING:absl:No GPU/TPU found, falling back to CPU. (Set TF_CPP_MIN_LOG_LEVEL=0 and rerun for more info.)
+Traceback (most recent call last):
+  File "ellipse.py", line 367, in <module>
+    main_ahs()
+  File "ellipse.py", line 343, in main_ahs
+    _ = sde_dif.landmark_segment(q0, vT, SigmaT, LT, b_funsimple, sigma_funsimple, 
+  File "../../src/diffusion_bridges.py", line 317, in landmark_segment
+    theta, Xt = update_theta_X(x0, theta, Xt, Wt)
+  File "../../src/diffusion_bridges.py", line 215, in update_theta_X
+    b_fun_thetacirc, Xtcirc = update_mat(theta_circ, Wt)
+  File "../../src/diffusion_bridges.py", line 117, in update_mat
+    Xt = sim_gp(x0, b_fun_theta, sigma_fun_theta, Ft, Ht, Wt)
+  File "../../src/diffusion_bridges.py", line 64, in sim_gp
+    _, x = lax.scan(update_xi, init=x0, xs=(time_grid[:-1], diff_grid, dW, 
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/traceback_util.py", line 162, in reraise_with_filtered_traceback
+    return fun(*args, **kwargs)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/lax/control_flow.py", line 1345, in scan
+    init_flat, carry_avals, carry_avals_out, init_tree, *rest = _create_jaxpr(init)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/lax/control_flow.py", line 1331, in _create_jaxpr
+    jaxpr, consts, out_tree = _initial_style_jaxpr(
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/util.py", line 187, in wrapper
+    return cached(config._trace_context(), *args, **kwargs)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/util.py", line 180, in cached
+    return f(*args, **kwargs)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/lax/control_flow.py", line 77, in _initial_style_jaxpr
+    jaxpr, consts, out_tree = _initial_style_open_jaxpr(
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/util.py", line 187, in wrapper
+    return cached(config._trace_context(), *args, **kwargs)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/util.py", line 180, in cached
+    return f(*args, **kwargs)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/lax/control_flow.py", line 71, in _initial_style_open_jaxpr
+    jaxpr, _, consts = pe.trace_to_jaxpr_dynamic(wrapped_fun, in_avals, debug)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/interpreters/partial_eval.py", line 1510, in trace_to_jaxpr_dynamic
+    jaxpr, out_avals, consts = trace_to_subjaxpr_dynamic(fun, main, in_avals)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/interpreters/partial_eval.py", line 1520, in trace_to_subjaxpr_dynamic
+    ans = fun.call_wrapped(*in_tracers)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/linear_util.py", line 166, in call_wrapped
+    ans = self.f(*args, **dict(self.params, **kwargs))
+  File "../../src/diffusion_bridges.py", line 59, in update_xi
+    x = xi+(b_fun(t,xi)+a.dot(r))*dt+sigma.dot(dWt)
+  File "../../src/diffusion_bridges.py", line 91, in <lambda>
+    b_fun_theta = lambda t,x: b_fun(t,x,theta)
+  File "ellipse.py", line 340, in <lambda>
+    b_funsimple = lambda t,x,theta : b_fun(t,x,theta)
+  File "../../src/landmark_models2.py", line 220, in ahs_drift
+    dq = dH_dp(q, p, k, theta).reshape(-1)+1/2*vmap(lambda x: dqi_extra(x,theta))(q).reshape(-1)
+  File "../../src/landmark_models2.py", line 362, in dH_dp
+    dH = vmap(dH_dpi)(q)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/traceback_util.py", line 162, in reraise_with_filtered_traceback
+    return fun(*args, **kwargs)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/api.py", line 1452, in batched_fun
+    out_flat = batching.batch(
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/linear_util.py", line 166, in call_wrapped
+    ans = self.f(*args, **dict(self.params, **kwargs))
+  File "../../src/landmark_models2.py", line 360, in dH_dpi
+    return (p.T*K).sum(axis=1)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/core.py", line 520, in __mul__
+    def __mul__(self, other): return self.aval._mul(self, other)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/numpy/lax_numpy.py", line 6585, in deferring_binary_op
+    return binary_op(self, other)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/traceback_util.py", line 162, in reraise_with_filtered_traceback
+    return fun(*args, **kwargs)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/api.py", line 416, in cache_miss
+    out_flat = xla.xla_call(
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/core.py", line 1632, in bind
+    return call_bind(self, fun, *args, **params)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/core.py", line 1623, in call_bind
+    outs = primitive.process(top_trace, fun, tracers, params)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/core.py", line 1635, in process
+    return trace.process_call(self, fun, tracers, params)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/interpreters/batching.py", line 177, in process_call
+    vals_out = call_primitive.bind(f, *vals, **params)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/core.py", line 1632, in bind
+    return call_bind(self, fun, *args, **params)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/core.py", line 1623, in call_bind
+    outs = primitive.process(top_trace, fun, tracers, params)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/core.py", line 1635, in process
+    return trace.process_call(self, fun, tracers, params)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/interpreters/partial_eval.py", line 1330, in process_call
+    jaxpr, out_avals, consts = trace_to_subjaxpr_dynamic(f, self.main, in_avals)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/interpreters/partial_eval.py", line 1520, in trace_to_subjaxpr_dynamic
+    ans = fun.call_wrapped(*in_tracers)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/linear_util.py", line 166, in call_wrapped
+    ans = self.f(*args, **dict(self.params, **kwargs))
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/numpy/lax_numpy.py", line 690, in fn
+    return lax_fn(x1, x2) if x1.dtype != bool_ else bool_lax_fn(x1, x2)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/lax/lax.py", line 374, in mul
+    return mul_p.bind(x, y)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/core.py", line 272, in bind
+    out = top_trace.process_primitive(self, tracers, params)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/interpreters/batching.py", line 163, in process_primitive
+    val_out, dim_out = batched_primitive(vals_in, dims_in, **params)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/interpreters/batching.py", line 404, in broadcast_batcher
+    out = prim.bind(*args, **params)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/core.py", line 272, in bind
+    out = top_trace.process_primitive(self, tracers, params)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/interpreters/partial_eval.py", line 1317, in process_primitive
+    out_avals = primitive.abstract_eval(*avals, **params)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/lax/lax.py", line 2274, in standard_abstract_eval
+    return ShapedArray(shape_rule(*avals, **kwargs), dtype_rule(*avals, **kwargs),
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/lax/lax.py", line 2372, in _broadcasting_shape_rule
+    raise TypeError(msg.format(name, ', '.join(map(str, map(tuple, shapes)))))
+jax._src.traceback_util.UnfilteredStackTrace: TypeError: mul got incompatible shapes for broadcasting: (15, 2, 15), (15, 15, 1).
+
+The stack trace below excludes JAX-internal frames.
+The preceding is the original exception that occurred, unmodified.
+
+--------------------
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "ellipse.py", line 367, in <module>
+    main_ahs()
+  File "ellipse.py", line 343, in main_ahs
+    _ = sde_dif.landmark_segment(q0, vT, SigmaT, LT, b_funsimple, sigma_funsimple, 
+  File "../../src/diffusion_bridges.py", line 317, in landmark_segment
+    theta, Xt = update_theta_X(x0, theta, Xt, Wt)
+  File "../../src/diffusion_bridges.py", line 215, in update_theta_X
+    b_fun_thetacirc, Xtcirc = update_mat(theta_circ, Wt)
+  File "../../src/diffusion_bridges.py", line 117, in update_mat
+    Xt = sim_gp(x0, b_fun_theta, sigma_fun_theta, Ft, Ht, Wt)
+  File "../../src/diffusion_bridges.py", line 64, in sim_gp
+    _, x = lax.scan(update_xi, init=x0, xs=(time_grid[:-1], diff_grid, dW, 
+  File "../../src/diffusion_bridges.py", line 59, in update_xi
+    x = xi+(b_fun(t,xi)+a.dot(r))*dt+sigma.dot(dWt)
+  File "../../src/diffusion_bridges.py", line 91, in <lambda>
+    b_fun_theta = lambda t,x: b_fun(t,x,theta)
+  File "ellipse.py", line 340, in <lambda>
+    b_funsimple = lambda t,x,theta : b_fun(t,x,theta)
+  File "../../src/landmark_models2.py", line 220, in ahs_drift
+    dq = dH_dp(q, p, k, theta).reshape(-1)+1/2*vmap(lambda x: dqi_extra(x,theta))(q).reshape(-1)
+  File "../../src/landmark_models2.py", line 362, in dH_dp
+    dH = vmap(dH_dpi)(q)
+  File "../../src/landmark_models2.py", line 360, in dH_dpi
+    return (p.T*K).sum(axis=1)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/numpy/lax_numpy.py", line 6585, in deferring_binary_op
+    return binary_op(self, other)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/numpy/lax_numpy.py", line 690, in fn
+    return lax_fn(x1, x2) if x1.dtype != bool_ else bool_lax_fn(x1, x2)
+TypeError: mul got incompatible shapes for broadcasting: (15, 2, 15), (15, 15, 1).

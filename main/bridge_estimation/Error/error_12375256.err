@@ -1,0 +1,86 @@
+Loaded module: python3/3.8.2
+WARNING:absl:No GPU/TPU found, falling back to CPU. (Set TF_CPP_MIN_LOG_LEVEL=0 and rerun for more info.)
+Traceback (most recent call last):
+  File "cardiac.py", line 392, in <module>
+    main_ahs()
+  File "cardiac.py", line 368, in main_ahs
+    _ = sde_dif.landmark_segment(q0, vT, SigmaT, LT, b_funsimple, sigma_funsimple, 
+  File "../../src/diffusion_bridges.py", line 269, in landmark_segment
+    = update_mat(theta, Wt)
+  File "../../src/diffusion_bridges.py", line 111, in update_mat
+    = bf.lmmu_step(beta_fun_theta, B_fun_theta, 
+  File "../../src/backward_filtering.py", line 219, in lmmu_step
+    return odeint_method() #Lt, Mt, mut, Ft, Ht
+  File "../../src/backward_filtering.py", line 208, in odeint_method
+    Ft = compute_Ft(Lt, Mt_inv, vt, mut)
+  File "../../src/backward_filtering.py", line 136, in compute_Ft
+    return jnp.einsum('inj,ij->in', val, vt-mut)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/numpy/lax_numpy.py", line 6585, in deferring_binary_op
+    return binary_op(self, other)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/traceback_util.py", line 162, in reraise_with_filtered_traceback
+    return fun(*args, **kwargs)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/api.py", line 416, in cache_miss
+    out_flat = xla.xla_call(
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/core.py", line 1632, in bind
+    return call_bind(self, fun, *args, **params)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/core.py", line 1623, in call_bind
+    outs = primitive.process(top_trace, fun, tracers, params)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/core.py", line 1635, in process
+    return trace.process_call(self, fun, tracers, params)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/core.py", line 627, in process_call
+    return primitive.impl(f, *tracers, **params)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/interpreters/xla.py", line 687, in _xla_call_impl
+    compiled_fun = _xla_callable(fun, device, backend, name, donated_invars,
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/linear_util.py", line 263, in memoized_fun
+    ans = call(fun, *args)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/interpreters/xla.py", line 759, in _xla_callable_uncached
+    return lower_xla_callable(fun, device, backend, name, donated_invars,
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/interpreters/xla.py", line 771, in lower_xla_callable
+    jaxpr, out_avals, consts = pe.trace_to_jaxpr_final(
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/interpreters/partial_eval.py", line 1542, in trace_to_jaxpr_final
+    jaxpr, out_avals, consts = trace_to_subjaxpr_dynamic(fun, main, in_avals)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/interpreters/partial_eval.py", line 1520, in trace_to_subjaxpr_dynamic
+    ans = fun.call_wrapped(*in_tracers)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/linear_util.py", line 166, in call_wrapped
+    ans = self.f(*args, **dict(self.params, **kwargs))
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/numpy/lax_numpy.py", line 679, in <lambda>
+    fn = lambda x1, x2: lax_fn(*_promote_args(numpy_fn.__name__, x1, x2))
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/lax/lax.py", line 370, in sub
+    return sub_p.bind(x, y)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/core.py", line 272, in bind
+    out = top_trace.process_primitive(self, tracers, params)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/interpreters/partial_eval.py", line 1317, in process_primitive
+    out_avals = primitive.abstract_eval(*avals, **params)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/lax/lax.py", line 2274, in standard_abstract_eval
+    return ShapedArray(shape_rule(*avals, **kwargs), dtype_rule(*avals, **kwargs),
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/lax/lax.py", line 2372, in _broadcasting_shape_rule
+    raise TypeError(msg.format(name, ', '.join(map(str, map(tuple, shapes)))))
+jax._src.traceback_util.UnfilteredStackTrace: TypeError: sub got incompatible shapes for broadcasting: (66, 2), (101, 132).
+
+The stack trace below excludes JAX-internal frames.
+The preceding is the original exception that occurred, unmodified.
+
+--------------------
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "cardiac.py", line 392, in <module>
+    main_ahs()
+  File "cardiac.py", line 368, in main_ahs
+    _ = sde_dif.landmark_segment(q0, vT, SigmaT, LT, b_funsimple, sigma_funsimple, 
+  File "../../src/diffusion_bridges.py", line 269, in landmark_segment
+    = update_mat(theta, Wt)
+  File "../../src/diffusion_bridges.py", line 111, in update_mat
+    = bf.lmmu_step(beta_fun_theta, B_fun_theta, 
+  File "../../src/backward_filtering.py", line 219, in lmmu_step
+    return odeint_method() #Lt, Mt, mut, Ft, Ht
+  File "../../src/backward_filtering.py", line 208, in odeint_method
+    Ft = compute_Ft(Lt, Mt_inv, vt, mut)
+  File "../../src/backward_filtering.py", line 136, in compute_Ft
+    return jnp.einsum('inj,ij->in', val, vt-mut)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/numpy/lax_numpy.py", line 6585, in deferring_binary_op
+    return binary_op(self, other)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/jax/_src/numpy/lax_numpy.py", line 679, in <lambda>
+    fn = lambda x1, x2: lax_fn(*_promote_args(numpy_fn.__name__, x1, x2))
+TypeError: sub got incompatible shapes for broadcasting: (66, 2), (101, 132).
