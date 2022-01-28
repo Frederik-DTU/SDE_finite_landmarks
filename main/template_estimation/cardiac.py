@@ -184,9 +184,9 @@ def parse_args():
     parser.add_argument('--update_theta', default=0, type=int)
     
     #Iteration parameters
-    parser.add_argument('--max_iter', default=10, #20000, 
+    parser.add_argument('--max_iter', default=5, #20000, 
                         type=int)
-    parser.add_argument('--save_step', default=10, 
+    parser.add_argument('--save_step', default=0, 
                         type=int)
 
 

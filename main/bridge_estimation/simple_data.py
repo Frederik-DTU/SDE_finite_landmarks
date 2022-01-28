@@ -144,10 +144,10 @@ def parse_args():
                         type=float)
     parser.add_argument('--theta', default=0.2, 
                         type=float)
-    parser.add_argument('--update_theta', default=1, type=int)
+    parser.add_argument('--update_theta', default=0, type=int)
     
     #Iteration parameters
-    parser.add_argument('--max_iter', default=100, #20000, 
+    parser.add_argument('--max_iter', default=10, #20000, 
                         type=int)
     parser.add_argument('--save_step', default=0, 
                         type=int)

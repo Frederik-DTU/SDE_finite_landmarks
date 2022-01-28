@@ -109,7 +109,7 @@ def landmark_segment(q0:jnp.ndarray,
 
         L0, M0, mu0, Ft, Ht \
             = bf.lmmu_step(beta_fun_theta, B_fun_theta, 
-                           atilde_fun, LT, SigmaT, muT, vT, time_grid,
+                           atilde_fun, LT, SigmaT, muT, vT.reshape(-1), time_grid,
                            method=backward_method)
             
         M0_inv = jnp.linalg.inv(M0)
@@ -117,7 +117,7 @@ def landmark_segment(q0:jnp.ndarray,
         Xt = sim_gp(x0, b_fun_theta, sigma_fun_theta, Ft, Ht, Wt)
         logpsi_Xt = logpsi(b_fun_theta, sigma_fun_theta, beta_mat, B_mat, 
                            Ft, Ht, atilde_mat, Xt)
-        rho0 = sp.mnormal_pdf(vT, mu0+jnp.einsum('jk,k->j', L0, x0), M0)
+        rho0 = sp.mnormal_pdf(vT.reshape(-1), mu0+jnp.einsum('jk,k->j', L0, x0), M0)
         
         return L0, M0, M0_inv, mu0, Ht, Ft, beta_mat, \
             B_mat, atilde_mat, sigma_fun_theta, logpsi_Xt, \
@@ -154,7 +154,7 @@ def landmark_segment(q0:jnp.ndarray,
         logpsi_Xt = logpsi(b_fun_theta, sigma_fun_theta, beta_mat, B_mat, 
                            Ft, Ht, atilde_mat, Xt)
         
-        x_diff = vT-(mu0+jnp.einsum('jk,k->j', L0, x0))
+        x_diff = vT.reshape(-1)-(mu0+jnp.einsum('jk,k->j', L0, x0))
         num = -1/2*(x_diff).T.dot(M0_inv).dot(x_diff)
                 
         return logpsi_Xt + num
@@ -177,7 +177,7 @@ def landmark_segment(q0:jnp.ndarray,
         
         L_p0circ = grad_L(p0_circ, Wt)
         
-        rho0_circ = sp.mnormal_pdf(vT,mu0+jnp.einsum('jk,k->j', L0, x0_circ), M0)
+        rho0_circ = sp.mnormal_pdf(vT.reshape(-1),mu0+jnp.einsum('jk,k->j', L0, x0_circ), M0)
         pi_x0circ = pi_prob(q0, p0_circ)
         
         norm_p0 = sp.mnormal_pdf(p0, p0_circ+delta2*L_p0circ, deltaI)

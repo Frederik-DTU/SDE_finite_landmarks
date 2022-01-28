@@ -204,7 +204,7 @@ def lmmu_step(beta, B_fun, a, LT, MT, muT, vt, time_grid, method='odeint'):
         Lt = Lt.reshape([-1]+LT_dim)
         Mt = Mt.reshape([-1]+SigmaT_dim)
         Mt_inv = jnp.linalg.inv(Mt)
-        
+
         Ft = compute_Ft(Lt, Mt_inv, vt, mut)
         Ht = compute_Ht(Lt, Mt_inv)
         
