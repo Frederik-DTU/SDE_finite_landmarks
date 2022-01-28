@@ -176,8 +176,8 @@ def landmark_segment(q0:jnp.ndarray,
                                atilde_mat, Xt_circ)
         
         L_p0circ = grad_L(p0_circ, Wt)
-        if jnp.linalg.norm(L_p0circ)>1.0:
-            L_p0 = 0.01*jnp.sign(L_p0)
+        if jnp.linalg.norm(delta2*L_p0circ)>10.0:
+            L_p0circ = 0.01*jnp.sign(L_p0circ)/delta2
         
         rho0_circ = sp.mnormal_pdf(vT.reshape(-1),mu0+jnp.einsum('jk,k->j', L0, x0_circ), M0)
         pi_x0circ = pi_prob(q0, p0_circ)
@@ -972,8 +972,8 @@ def landmark_template_qT(vT:jnp.ndarray,
                                 B, F, H, a, x))(beta_mat, B_mat, Ft, Ht, atilde_mat, Xt_circ)
         
         L_p0circ = grad_pL(p0_circ, Wt)
-        if jnp.linalg.norm(L_p0circ)>1.0:
-            L_p0circ = 0.01*jnp.sign(L_p0circ)
+        if jnp.linalg.norm(deltap2*L_p0circ)>10.0:
+            L_p0circ = 0.01*jnp.sign(L_p0circ)/deltap2
         
         rho0_circ = sp.mnormal_pdf(vT[0],mu0[0]+jnp.einsum('jk,k->j', L0[0], x0_circ), M0[0])#Maybe vmap
         pi_x0circ = pi_prob(q0, p0_circ)
@@ -1015,8 +1015,8 @@ def landmark_template_qT(vT:jnp.ndarray,
         
         Kq0_circ = kernel_matrix(q0_circ)
         KL_q0circ = Kq0_circ.dot(grad_qL(q0_circ, Wt).reshape(n,d)).reshape(-1)
-        if jnp.linalg.norm(KL_q0circ)>1.0:
-            KL_q0circ = 0.01*jnp.sign(KL_q0circ)
+        if jnp.linalg.norm(deltaq2*KL_q0circ)>10.0:
+            KL_q0circ = 0.01*jnp.sign(KL_q0circ)/deltaq2
         
         rho0_circ = sp.mnormal_pdf(vT[0],mu0[0]+jnp.einsum('jk,k->j', L0[0], x0_circ), M0[0]) #Maybe vmap
         pi_x0circ = pi_prob(q0_circ, p0)
