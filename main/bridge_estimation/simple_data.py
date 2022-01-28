@@ -36,12 +36,12 @@ import sim_sp as sp
 #Kernel function
 def k(x:jnp.ndarray, y, theta:jnp.ndarray=1.0)->jnp.ndarray:
     
-    return jnp.exp(-jnp.dot(x-y,x-y)/(2*(theta**2)))
+    return jnp.exp(-jnp.dot(x-y,x-y)/(2*(float(theta)**2)))
 
 #Kernel gradient
 def grad_k(x:jnp.ndarray, y, theta:jnp.ndarray=1.0)->jnp.ndarray:
     
-    return -(theta**(-2))*k(x,y,theta)*(x-y)
+    return -(float(theta)**(-2))*k(x,y,theta)*(x-y)
 
 #Kernel for prior
 def pi_kernel(x:jnp.ndarray)->jnp.ndarray:
@@ -142,9 +142,9 @@ def parse_args():
                         type=float)
     parser.add_argument('--T', default=1.0, 
                         type=float)
-    parser.add_argument('--theta', default=1.0, 
+    parser.add_argument('--theta', default=0.2, 
                         type=float)
-    parser.add_argument('--update_theta', default=0, type=int)
+    parser.add_argument('--update_theta', default=1, type=int)
     
     #Iteration parameters
     parser.add_argument('--max_iter', default=100, #20000, 
