@@ -260,7 +260,7 @@ def main_ms():
         b_funsimple = lambda t,x,theta : b_fun(t,x,theta)
         sigma_funsimple = lambda t,x,theta : sigma_fun(t,x,theta)
     
-    _ = sde_dif.landmark_segment(q0, vT, SigmaT, LT, b_funsimple, sigma_funsimple, 
+    Wt, Xt = sde_dif.landmark_segment(q0, vT, SigmaT, LT, b_funsimple, sigma_funsimple, 
                                   beta_funfast, 
                                   B_funfast, sigmatilde_funfast, pi_prob, 
                                   max_iter = args.max_iter,
