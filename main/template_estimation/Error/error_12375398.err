@@ -1,0 +1,18 @@
+Loaded module: python3/3.8.2
+WARNING:absl:No GPU/TPU found, falling back to CPU. (Set TF_CPP_MIN_LOG_LEVEL=0 and rerun for more info.)
+Traceback (most recent call last):
+  File "ellipse.py", line 417, in <module>
+    main_tv()
+  File "ellipse.py", line 214, in main_tv
+    _ = sde_dif.landmark_template_qT(vT,
+  File "../../src/diffusion_bridges.py", line 1218, in landmark_template_qT
+    q0, Xt = update_q0_X(q0, p0, Xt, Wt)
+  File "../../src/diffusion_bridges.py", line 1022, in update_q0_X
+    pi_x0circ = pi_prob(q0_circ, p0)
+  File "ellipse.py", line 68, in pi_prob
+    pi = jnp.prod(multivariate_normal.pdf(p0.T, mean=mu, cov = Sigma))
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/scipy/stats/_multivariate.py", line 525, in pdf
+    psd = _PSD(cov, allow_singular=allow_singular)
+  File "/zhome/77/8/118225/.local/lib/python3.8/site-packages/scipy/stats/_multivariate.py", line 162, in __init__
+    raise ValueError('the input matrix must be positive semidefinite')
+ValueError: the input matrix must be positive semidefinite
