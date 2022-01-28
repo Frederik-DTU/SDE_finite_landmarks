@@ -36,14 +36,10 @@ import sim_sp as sp
 #Kernel function
 def k(x:jnp.ndarray, y, theta:jnp.ndarray=None)->jnp.ndarray:
     
-    theta = 1.0
-    
     return jnp.exp(-jnp.dot(x-y,x-y)/(2*(theta**2)))
 
 #Kernel gradient
 def grad_k(x:jnp.ndarray, y, theta:jnp.ndarray=None)->jnp.ndarray:
-    
-    theta = 1.0
     
     return -(theta**(-2))*k(x,y,theta)*(x-y)
 
@@ -130,30 +126,30 @@ def parse_args():
     # File-paths
     parser.add_argument('--save_path', default='simple_models/', 
                         type=str)
-    parser.add_argument('--model', default='tv', 
+    parser.add_argument('--model', default='ms', 
                         type=str)
     
     #Hyper-parameters
     parser.add_argument('--eta', default=0.98, #Should close to 1
                         type=float)
-    parser.add_argument('--delta', default=0.001, #Should be low
+    parser.add_argument('--delta', default=0.001, #Should be low #0.001
                         type=float)
     parser.add_argument('--epsilon', default=0.001,#0.001,
                         type=float)
-    parser.add_argument('--time_step', default=0.01, #0.001,
+    parser.add_argument('--time_step', default=0.01, #0.001, #0.01
                         type=float)
     parser.add_argument('--t0', default=0.0, 
                         type=float)
     parser.add_argument('--T', default=1.0, 
                         type=float)
-    parser.add_argument('--theta', default=0.2, 
+    parser.add_argument('--theta', default=1.0, 
                         type=float)
     parser.add_argument('--update_theta', default=0, type=int)
     
     #Iteration parameters
-    parser.add_argument('--max_iter', default=10, #20000, 
+    parser.add_argument('--max_iter', default=100, #20000, 
                         type=int)
-    parser.add_argument('--save_step', default=10, 
+    parser.add_argument('--save_step', default=0, 
                         type=int)
 
 

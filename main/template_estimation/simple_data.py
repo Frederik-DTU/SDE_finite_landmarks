@@ -147,14 +147,14 @@ def parse_args():
                         type=float)
     parser.add_argument('--T', default=1.0, 
                         type=float)
-    parser.add_argument('--theta', default=0.2, 
+    parser.add_argument('--theta', default=1.0, 
                         type=float)
     parser.add_argument('--update_theta', default=0, type=int)
     
     #Iteration parameters
     parser.add_argument('--max_iter', default=10, #20000, 
                         type=int)
-    parser.add_argument('--save_step', default=10, 
+    parser.add_argument('--save_step', default=0, 
                         type=int)
 
 
@@ -210,7 +210,7 @@ def main_tv():
         b_funsimple = lambda t,x,theta : b_fun(t,x,theta)
         sigma_funsimple = lambda t,x,theta : sigma_fun(t,x,theta)
     
-    _ = sde_dif.landmark_template_qT(vT,
+    Wt, Xt = sde_dif.landmark_template_qT(vT,
                   SigmaT,
                   LT,
                   b_funsimple,
@@ -238,6 +238,7 @@ def main_tv():
                   update_p0 = False,
                   save_step = args.save_step,
                   save_path = save_path)
+    
     return
 
 #%% MS-model

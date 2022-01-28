@@ -106,7 +106,7 @@ def parse_args():
                         type=float)
     
     #Iteration parameters
-    parser.add_argument('--max_iter', default=100, #20000, 
+    parser.add_argument('--max_iter', default=10, #20000, 
                         type=int)
     parser.add_argument('--save_step', default=0, 
                         type=int)
@@ -185,21 +185,23 @@ def main():
         
     
     
-    #theta, Wt, Xt = sde_dif.landmark_segment2(q0, vT, SigmaT, LT, b_funsimple, sigma_funsimple, 
-    #                              betatilde_funfast, 
-    #                              Btilde_funfast, sigmatilde_funfast, pi_prob, 
-    #                              max_iter = args.max_iter,
-    #                              time_grid = time_grid,
-    #                              eta=args.eta,
-    #                              delta=args.delta,
-    #                              theta = None,
-    #                              q_sample = q_sample,
-    #                            q_prob = q_prob,
-    #                              backward_method = 'odeint',
-    #                              save_step = args.save_step,
-    #                              save_path = args.save_path)
+    Wt, Xt = sde_dif.landmark_segment(q0, vT, SigmaT, LT, b_funsimple, sigma_funsimple, 
+                                  betatilde_funfast, 
+                                  Btilde_funfast, sigmatilde_funfast, pi_prob, 
+                                  max_iter = args.max_iter,
+                                  time_grid = time_grid,
+                                  eta=args.eta,
+                                  delta=args.delta,
+                                  theta = None,
+                                  q_sample = q_sample,
+                                  q_prob = q_prob,
+                                  backward_method = 'odeint',
+                                  save_step = args.save_step,
+                                  save_path = args.save_path)
     
-    jnp.savez(args.save_path+'Wt_Xt_'+str(args.max_iter), Wt=Wt, Xt=Xt)
+    print(Xt[-1])
+    
+    #jnp.savez(args.save_path+'Wt_Xt_'+str(args.max_iter), Wt=Wt, Xt=Xt)
     
     return
 

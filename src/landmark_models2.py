@@ -8,7 +8,7 @@ Created on Tue Dec  7 14:55:05 2021
 #%% Modules used
 
 import jax.numpy as jnp
-from jax import vmap, grad
+from jax import vmap
 
 #%% Functions
 

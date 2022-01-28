@@ -803,6 +803,7 @@ def landmark_segment2(q0:jnp.ndarray,
                                atilde_mat, Xt_circ)
         
         L_p0circ = grad_L(p0_circ, Wt)
+        
         rho0_circ = sp.mnormal_pdf(vT,mu0+jnp.einsum('jk,k->j', L0, x0_circ), M0)
         pi_x0circ = pi_prob(q0, p0_circ)
         
