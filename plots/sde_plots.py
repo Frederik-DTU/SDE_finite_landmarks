@@ -123,3 +123,17 @@ plt.title('Diffusion Bridge for $dX_t=0.5X_tdt+0.5X_tdW_t$ with $\sigma_v=100$')
 plt.grid()
 plt.legend()
 plt.tight_layout()
+
+
+Xt_gbm_gp = jnp.zeros((10, 1000))
+for i in range(10):
+    Xt_gbm_gp = Xt_gbm_gp.at[i].set(sp.sim_sde_euler(x0, gbm_b_gp, lambda t,x: gbm_sigma(t,vT), Wt[i], grid))
+
+plt.figure(figsize=(8,6))
+plt.plot(grid, Xt_gbm_gp.T, color='black')
+plt.xlabel('t')
+plt.ylabel('$X_t$')
+plt.title('Auxillary model $dX_t=0.5X_tdt+0.5v_{T}dW_t$ with $v_{T}=1.0$')
+plt.grid()
+plt.legend()
+plt.tight_layout()
