@@ -1,0 +1,3 @@
+Loaded module: python3/3.8.2
+WARNING:absl:No GPU/TPU found, falling back to CPU. (Set TF_CPP_MIN_LOG_LEVEL=0 and rerun for more info.)
+/zhome/77/8/118225/.lsbatch/1643412310.12375872.shell: line 26: 262054 Segmentation fault      python3 corpus_callosum.py --save_path corpus_callosum_models/ --model ms --eta 0.98 --delta 0.001 --epsilon 0.001 --theta 0.2 --update_theta 1 --max_iter 20000 --save_step 500
